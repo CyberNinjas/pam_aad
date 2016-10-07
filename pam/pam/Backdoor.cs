@@ -12,7 +12,7 @@ public class Tester
 	public static void Main(string[] args)
 	{
 		pam_handle_t t = new pam_handle_t ();
-		int one = 1;
-		pam_sm_authenticate(ref t, one, args.Length, args);
+		int placeholder = 1;
+		pam_sm_authenticate(ref t, placeholder, args.Length, args);
 	}
 }
