@@ -19,6 +19,8 @@ public class Tester
 		String username = Console.ReadLine();
 		Console.WriteLine ("Please provide your password: ");
 		String password = Console.ReadLine();
-	    username_and_password (ref t, username, password);
+	    int result = username_and_password (ref t, username, password);
+		Console.WriteLine ("the result is...");
+		Console.WriteLine (result);
 	}
 }

