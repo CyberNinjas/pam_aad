@@ -2,12 +2,13 @@
  *the object will throw a warning and rely on default values which are hardcoded in.
  * @example
  * int main(){
- *  String *tenent;
+ *  String *tenant;
  *  String *client_id;
  *  String *resource_id;
  *  String cfgfilepath = "/etc/security/config.ini";
- *  readConfigFile(cfgfilepath, tenent, client_id, resource_id); 
- * } 
+ *  readConfigFile(cfgfilepath, tenant, client_id, resource_id); 
+ *  }
+ *  Find an example configuration file in examples/example.config.ini
  */
 
 typedef struct {
