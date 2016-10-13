@@ -1,11 +1,12 @@
 #include "restclient-cpp/restclient.h"
 #include "restclient-cpp/connection.h"
-//#include "json.hpp"
+#include "json.hpp"
 #include <string>
 #include <iostream>
 #include <unistd.h>
+#include "clientConfig.h"
 using namespace std;
-//using json = nlohman::json;
+using json = nlohman::json;
 
 string getClientRequestId()
 {
@@ -17,7 +18,7 @@ string  getDeviceCode()
 {
   string client_id = "REDACTED";
   string resource = "00000002-0000-0000-c000-000000000000";
-  string tenant = "digipirates.onmicrosoft.com";
+  string tenant = "REDACTED";
   string client_request_id = getClientRequestId();
   string url = "https://login.microsoftonline.com/" + tenant + "/oauth2/devicecode?resource=" + resource + "&client_id=" + client_id;
   RestClient::Response r = RestClient::get(url);
