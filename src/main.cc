@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include "clientConfig.h"
 using namespace std;
-using json = nlohman::json;
 
 string getClientRequestId()
 {
