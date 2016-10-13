@@ -9,4 +9,4 @@ Azure Active Directory PAM Module
 
 mostly for me not to forget as I'm learning c++ 
 
-``` g++ main.cc -lcurl -lrestclient-cpp -I ../include/ -std=c++11  -o main.out```
+``` g++ main.cc clientConfig.cc pamIgnore.cc -lcurl -lrestclient-cpp -I ../include/ -std=c++11  -o main.out```

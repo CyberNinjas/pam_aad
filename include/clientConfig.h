@@ -3,5 +3,5 @@ using namespace std;
 class ClientConfig
 {
  public:
-   void readConfigFile(char*, char*&, char*&, char*&);
+   void readConfigFile(string, string*&, string*&, string*&);
 };
