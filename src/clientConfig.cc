@@ -17,7 +17,7 @@ typedef struct {
 
 using namespace std;
 
-void readConfigFile(char *cfgfile, char*& client_id, char*& resource_id) {
+void ClientConfig::readConfigFile(char *cfgfile, char*& client_id, char*& resource_id) {
 
         Settings *conf;
         GKeyFile *keyfile;
