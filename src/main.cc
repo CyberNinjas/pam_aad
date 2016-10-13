@@ -68,6 +68,11 @@ int AuthenticateToMicrosoft(){
 
 int main(int args, char* argv[])
 {
+  string *tenant;
+  string *client_id;
+  string *resource_id;
+  string cfgfilepath = "/etc/security/oauth.config.ini";
+  ClientConfig::readConfigFile(cfgfilepath, tenant, client_id, resource_id);
   int response;
   string username; 
   string password;
