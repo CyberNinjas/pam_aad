@@ -5,6 +5,7 @@
 #include <iostream>
 #include <unistd.h>
 #include "clientConfig.h"
+#include "SimpleIni.h"
 using namespace std;
 
 string getClientRequestId()
@@ -68,6 +69,9 @@ int AuthenticateToMicrosoft(){
 
 int main(int args, char* argv[])
 {
+  CSimpleIniA ini;
+  ini.SetUnicode();
+  ini.LoadFile("/etc/security/oauth.config.ini");
   string *tenant;
   string *client_id;
   string *resource_id;
