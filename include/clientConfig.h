@@ -1,7 +1,5 @@
-using namespace std;
-
 class ClientConfig
 {
  public:
-  static void readConfigFile(string, string*&, string*&, string*&);
+  static void readConfigFile(std::string, std::string*&, std::string*&, std::string*&);
 };

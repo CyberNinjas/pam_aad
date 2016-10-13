@@ -10,12 +10,11 @@
  *  }
  *  Find an example configuration file in examples/example.config.ini
  */
-
+using namespace std;
 typedef struct {
-        gchar *client_id, *resource_id, *tenant;
+        string *client_id, *resource_id, *tenant;
 } Settings;
 
-using namespace std;
 
 static void ClientConfig::readConfigFile(string cfgfile, string*& client_id, string*& resource_id, string*& tenant) {
 
