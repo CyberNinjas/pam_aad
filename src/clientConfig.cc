@@ -10,13 +10,15 @@
  *  }
  *  Find an example configuration file in examples/example.config.ini
  */
-using namespace std;
+#include<string>
+#include<iostream>
+#include<glib.h>
 typedef struct {
-        string *client_id, *resource_id, *tenant;
+        std::string *client_id, *resource_id, *tenant;
 } Settings;
 
 
-static void ClientConfig::readConfigFile(string cfgfile, string*& client_id, string*& resource_id, string*& tenant) {
+static void ClientConfig::readConfigFile(std::string cfgfile, std::string*& client_id, std::string*& resource_id, std::string*& tenant) {
 
         Settings *conf;
         GKeyFile *keyfile;
@@ -46,7 +48,7 @@ static void ClientConfig::readConfigFile(string cfgfile, string*& client_id, str
 		        cout << "Can't read resource id -- using default value"	
 		}
 		conf-> resource_id     = g_key_file_get_string(keyfile, "oauth", "tenant", NULL);
-		tenant = confg->tenant;
+		tenant = conf->tenant;
 		if (tenant == NULL){
 			tenant = "common";
 			cout << "Can't read tenant -- using default value"
