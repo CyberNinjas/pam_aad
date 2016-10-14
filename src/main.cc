@@ -62,13 +62,24 @@ bool providedToken(string response_body){
   cout << "TOKEN INCOMING";
   return true;
 } 
-  cout << "TOKEN NOT ACCEPTED";
   return false;
 }
 
 string pullTokenFromResponse(string response){
-  cout << "response is...";
-  cout << response;
+  auto parsed = nlohmann::json::parse(response);
+  string token = parsed["access_token"];
+  return token;
+}
+
+string decodeJWT(string id_token){
+  string user = "shane";
+  return user; 
+}
+
+string pullUsernameFromIdToken(string response){
+  auto parsed = nlohmann::json::parse(response);
+  string username = decodeJWT(parsed["id_token"]);
+  return username;
 }
 
 int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
@@ -77,8 +88,6 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
   string deviceCodeMessage = getDeviceCode(tenant, resource, client_id);
   nlohmann::json request_dictionary = getUriMessage(deviceCodeMessage, resource, client_id);
   auto microsoft = nlohmann::json::parse(deviceCodeMessage);
-  cout << "\n";
-  cout << "The following message was given from microsoft...";
   cout << microsoft["message"];
   while (!gotToken){
     sleep(5);
@@ -86,6 +95,7 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
     gotToken = providedToken(response);
   } 
   string token = pullTokenFromResponse(response);
+  string_username = pullUsernameFromIdToken(response);
   return 1; 
 }
 
