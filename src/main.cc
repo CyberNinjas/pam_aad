@@ -89,7 +89,8 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
   string deviceCodeMessage = getDeviceCode(tenant, resource, client_id);
   nlohmann::json request_dictionary = getUriMessage(deviceCodeMessage, resource, client_id);
   auto microsoft = nlohmann::json::parse(deviceCodeMessage);
-  cout << microsoft["message"] << std::endl;
+  string message = microsoft["message"];
+  printf(message.c_str());
   while (!gotToken){
     sleep(5);
     response = pollForToken(request_dictionary);
@@ -100,9 +101,18 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
   return PAM_SUCCESS; 
 }
 
-int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv){
+PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv){
+  return PAM_SUCCESS;
+}
+
+PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const char **argv){
+  return PAM_SUCCESS;
+}
+
+PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv){
   const char *user = NULL;
   int pgu_ret;
+  pgu_ret = pam_get_user(pamh, &user, "Enter 0365 credentials...");
   CSimpleIniA ini; 
   ini.SetUnicode();
   ini.LoadFile("etc/security/oauth.config.ini");
@@ -111,6 +121,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **ar
   string client_id = ini.GetValue("oauth", "client_id");
   pgu_ret = AuthenticateToMicrosoft(tenant, resource, client_id); 
   if (pgu_ret != PAM_SUCCESS){
+    cout << "Yer failin" << std::endl;
     return(PAM_AUTH_ERR);
 } 
   return(PAM_SUCCESS);
