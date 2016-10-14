@@ -4,28 +4,24 @@
 #include <string>
 #include <iostream>
 #include <unistd.h>
-#include "clientConfig.h"
 #include "SimpleIni.h"
+#include "ClientConfig.h"
+
 using namespace std;
 
 string getClientRequestId()
 {
-  string client_request_id = "filler";
+  string client_request_id = "12345";
   return client_request_id;
 }
 
-string  getDeviceCode()
+string  getDeviceCode(string tenant, string resource, string client_id)
 {
-  string client_id = "REDACTED";
-  string resource = "00000002-0000-0000-c000-000000000000";
-  string tenant = "REDACTED";
   string client_request_id = getClientRequestId();
-  string url = "https://login.microsoftonline.com/" + tenant + "/oauth2/devicecode?resource=" + resource + "&client_id=" + client_id;
+  string url = "https://login.microsoftonline.com/" + tenant + "/oauth2/devicecode?resource=" + resource + "&client_id=" + client_id + "&client-request-id" + client_request_id;
   RestClient::Response r = RestClient::get(url);
   if (r.code == 200)
   {
-    cout << "\nSuccessful first request!\n";
-    cout << r.body + "\n";
     return r.body;
   }
   else
@@ -38,33 +34,47 @@ string  getDeviceCode()
   }
 }
 
-string getUriForPolling(string rawMessage){
-  string poll_uri = "filler";
-  return poll_uri;
+nlohmann::json getUriMessage(string rawMessage, string resource, string client_id){
+  //spit out json object
+  auto parsed = nlohmann::json::parse(rawMessage);
+  nlohmann::json message;
+  message["poll_uri"] = "https://login.microsoftonline.com/common/oauth2/token";
+  message["resource"] = resource;
+  message["client_id"] = client_id;
+  message["grant_type"] = "device_code";
+  message["code"] = parsed["device_code"];
+  return message;
 }
 
-string pollForToken(string poll_uri){
-  RestClient::Response r = RestClient::post(poll_uri, "text/json", "{\"foo\": \"bla\"}");
+string pollForToken(nlohmann::json request_dictionary){
+  string uri = request_dictionary["poll_uri"];
+  string resource = request_dictionary["resource"];
+  string client_id = request_dictionary["client_id"];
+  string code = request_dictionary["code"];
+  string body = "resource=" + resource + "&client_id=" + client_id + "&grant_type=device_code&code=" + code;
+  RestClient::Response r = RestClient::post(uri, "application/x-www-form-urlencoded", body);
   return r.body;
 }
 
 bool providedToken(string response_body){
+  auto parsed = nlohmann::json::parse(response_body);
+  cout << "response is...\n";
+  cout << parsed;
   return false;
 }
 
-int AuthenticateToMicrosoft(){
-  cout << "Welcome!\n";
-  string deviceCodeMessage = getDeviceCode();
-  string parsedUri = getUriForPolling(deviceCodeMessage);
-  cout << "\n" + deviceCodeMessage;
+int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
   bool gotToken = false;
   string response;
-  while (gotToken){
-    sleep(5000); //wait for 5 seconds before polling
-    response = pollForToken(parsedUri);
+  string deviceCodeMessage = getDeviceCode(tenant, resource, client_id);
+  nlohmann::json request_dictionary = getUriMessage(deviceCodeMessage, resource, client_id);
+  while (!gotToken){
+    sleep(5); //wait for 5 seconds before polling
+    response = pollForToken(request_dictionary);
     gotToken = providedToken(response);
   } 
-
+  cout <<"\nskipped to the end";
+  return 1; 
 }
 
 int main(int args, char* argv[])
@@ -72,14 +82,13 @@ int main(int args, char* argv[])
   CSimpleIniA ini;
   ini.SetUnicode();
   ini.LoadFile("/etc/security/oauth.config.ini");
-  string *tenant;
-  string *client_id;
-  string *resource_id;
-  string cfgfilepath = "/etc/security/oauth.config.ini";
-  ClientConfig::readConfigFile(cfgfilepath, tenant, client_id, resource_id);
+  string tenant = ini.GetValue("oauth", "tenant");
+  string resource_id = ini.GetValue("oauth", "resource_id");
+  string client_id = ini.GetValue("oauth", "client_id");
   int response;
   string username; 
   string password;
-  response = AuthenticateToMicrosoft(); 
+  response = AuthenticateToMicrosoft(tenant, resource_id, client_id);
+  cout <<"\nReturned from AuthenticateToMicrosoft call...";
   return response;
 }
