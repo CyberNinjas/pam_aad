@@ -59,8 +59,10 @@ string pollForToken(nlohmann::json request_dictionary){
 bool providedToken(string response_body){
   auto parsed = nlohmann::json::parse(response_body);
   if (parsed["error"] == NULL){
+  cout << "TOKEN INCOMING";
   return true;
-}
+} 
+  cout << "TOKEN NOT ACCEPTED";
   return false;
 }
 
@@ -74,12 +76,12 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
   string response;
   string deviceCodeMessage = getDeviceCode(tenant, resource, client_id);
   nlohmann::json request_dictionary = getUriMessage(deviceCodeMessage, resource, client_id);
+  auto microsoft = nlohmann::json::parse(deviceCodeMessage);
   cout << "\n";
   cout << "The following message was given from microsoft...";
-  cout << deviceCodeMessage;
-  cout << request_dictionary["message"];
+  cout << microsoft["message"];
   while (!gotToken){
-    sleep(5); //wait for 5 seconds before polling
+    sleep(5);
     response = pollForToken(request_dictionary);
     gotToken = providedToken(response);
   } 
