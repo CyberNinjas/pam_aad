@@ -1,5 +1,7 @@
 #include "restclient-cpp/restclient.h"
 #include "restclient-cpp/connection.h"
+#include <security/pam_appl.h> 
+#include <security/pam_modules.h>
 #include "json.hpp"
 #include <string>
 #include <iostream>
@@ -98,6 +100,8 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
   string username = pullUsernameFromIdToken(response);
   return 1; 
 }
+
+
 
 int main(int args, char* argv[])
 {
