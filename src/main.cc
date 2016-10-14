@@ -95,7 +95,7 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
     gotToken = providedToken(response);
   } 
   string token = pullTokenFromResponse(response);
-  string_username = pullUsernameFromIdToken(response);
+  string username = pullUsernameFromIdToken(response);
   return 1; 
 }
 
