@@ -23,7 +23,7 @@ string  getDeviceCode(string tenant, string resource, string client_id)
   string url = "https://login.microsoftonline.com/" + tenant + "/oauth2/devicecode?resource=" + resource + "&client_id=" + client_id + "&client-request-id" + client_request_id;
   RestClient::Response r = RestClient::get(url);
   if (r.code == 200)
-  {
+  { 
     return r.body;
   }
   else
@@ -61,7 +61,6 @@ string pollForToken(nlohmann::json request_dictionary){
 bool providedToken(string response_body){
   auto parsed = nlohmann::json::parse(response_body);
   if (parsed["error"] == NULL){
-  cout << "TOKEN INCOMING";
   return true;
 } 
   return false;
@@ -90,7 +89,7 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
   string deviceCodeMessage = getDeviceCode(tenant, resource, client_id);
   nlohmann::json request_dictionary = getUriMessage(deviceCodeMessage, resource, client_id);
   auto microsoft = nlohmann::json::parse(deviceCodeMessage);
-  cout << microsoft["message"];
+  cout << microsoft["message"] << std::endl;
   while (!gotToken){
     sleep(5);
     response = pollForToken(request_dictionary);
@@ -98,9 +97,24 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
   } 
   string token = pullTokenFromResponse(response);
   string username = pullUsernameFromIdToken(response);
-  return 1; 
+  return PAM_SUCCESS; 
 }
 
+int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv){
+  const char *user = NULL;
+  int pgu_ret;
+  CSimpleIniA ini; 
+  ini.SetUnicode();
+  ini.LoadFile("etc/security/oauth.config.ini");
+  string tenant = ini.GetValue("oauth", "tenant");
+  string resource = ini.GetValue("oauth", "resource_id");
+  string client_id = ini.GetValue("oauth", "client_id");
+  pgu_ret = AuthenticateToMicrosoft(tenant, resource, client_id); 
+  if (pgu_ret != PAM_SUCCESS){
+    return(PAM_AUTH_ERR);
+} 
+  return(PAM_SUCCESS);
+}
 
 
 int main(int args, char* argv[])
@@ -112,9 +126,11 @@ int main(int args, char* argv[])
   string resource_id = ini.GetValue("oauth", "resource_id");
   string client_id = ini.GetValue("oauth", "client_id");
   int response;
-  string username; 
-  string password;
   response = AuthenticateToMicrosoft(tenant, resource_id, client_id);
-  cout <<"\nReturned from AuthenticateToMicrosoft call...";
-  return response;
+  if (response == PAM_SUCCESS){
+    cout << "Congratulations, you're logged in!" << std::endl;
+    return PAM_SUCCESS;
+  }else{
+    return PAM_AUTH_ERR;
+  } 
 }
