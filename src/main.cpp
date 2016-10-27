@@ -121,7 +121,7 @@ PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const c
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv){
   const char *user = NULL;
   int pgu_ret;
-  pgu_ret = pam_get_user(pamh, &user, "Enter 0365 credentials...");
+  //pgu_ret = pam_get_user(pamh, &user, "Enter 0365 credentials...");
   CSimpleIniA ini; 
   ini.SetUnicode();
   ini.LoadFile("etc/security/oauth.config.ini");
