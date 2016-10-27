@@ -93,8 +93,10 @@ string decodeJWT(string id_token){
 
 string pullUsernameFromIdToken(string response){
   auto parsed = nlohmann::json::parse(response);
-  string username = decodeJWT(parsed["id_token"]);
-  return username;
+  string email = decodeJWT(parsed["id_token"]);
+  char* tok = strtok((char*) email, "@");
+  string user = (string) tok;
+  return use;
 }
 
 int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
@@ -120,42 +122,25 @@ PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const cha
 }
 
 PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const char **argv){
+  cout <<"Dank I see this." << endl;
   return PAM_SUCCESS;
 }
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv){
   const char *user = NULL;
   int pgu_ret;
-  //pgu_ret = pam_get_user(pamh, &user, "Enter 0365 credentials...");
+  pgu_ret = pam_get_user(pamh, &user, "Enter 0365 username...");
   CSimpleIniA ini; 
   ini.SetUnicode();
   ini.LoadFile("etc/security/oauth.config.ini");
   string tenant = ini.GetValue("oauth", "tenant");
   string resource = ini.GetValue("oauth", "resource_id");
   string client_id = ini.GetValue("oauth", "client_id");
+  printf("Welcome %s\n", user);
   pgu_ret = AuthenticateToMicrosoft(tenant, resource, client_id); 
   if (pgu_ret != PAM_SUCCESS){
     cout << "Yer failin" << std::endl;
     return(PAM_AUTH_ERR);
 } 
   return(PAM_SUCCESS);
-}
-
-
-int main(int args, char* argv[])
-{
-  CSimpleIniA ini;
-  ini.SetUnicode();
-  ini.LoadFile("/etc/security/oauth.config.ini");
-  string tenant = ini.GetValue("oauth", "tenant");
-  string resource_id = ini.GetValue("oauth", "resource_id");
-  string client_id = ini.GetValue("oauth", "client_id");
-  int response;
-  response = AuthenticateToMicrosoft(tenant, resource_id, client_id);
-  if (response == PAM_SUCCESS){
-    cout << "Congratulations, you're logged in!" << std::endl;
-    return PAM_SUCCESS;
-  }else{
-    return PAM_AUTH_ERR;
-  } 
 }

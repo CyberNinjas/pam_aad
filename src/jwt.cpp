@@ -53,7 +53,6 @@ namespace jwtcpp {
 
         JWT* parse(const string& jwt)
     {
-        size_t pos;
         // extracting the algorithm, payload, signature and data
         char* tok = strtok((char*) jwt.c_str(), ".");
         string raw_algorithm = (string) tok;

@@ -92,9 +92,13 @@ string decodeJWT(string id_token){
 }
 
 string pullUsernameFromIdToken(string response){
+  string pullUsernameFromIdToken(string response){
   auto parsed = nlohmann::json::parse(response);
-  string username = decodeJWT(parsed["id_token"]);
-  return username;
+  string email = decodeJWT(parsed["id_token"]);
+  char* tok = strtok((char*) email, "@");
+  string user = (string) tok;
+  return use;
+}
 }
 
 int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
