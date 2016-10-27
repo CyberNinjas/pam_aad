@@ -104,7 +104,7 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
   nlohmann::json request_dictionary = getUriMessage(deviceCodeMessage, resource, client_id);
   auto microsoft = nlohmann::json::parse(deviceCodeMessage);
   string message = microsoft["message"];
-  cout << message <<std::endl;
+  cout << message << std::endl;
   while (!gotToken){
     sleep(5);
     response = pollForToken(request_dictionary);

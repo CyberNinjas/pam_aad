@@ -1,4 +1,4 @@
-BINARIES = aad-pam
+BINARIES = aad-pam test
 SOURCES = main.cpp jwt.cpp utils.cpp
 TARGETS = $(BINARIES)
 
@@ -12,11 +12,13 @@ CXXFLAGS += $(CFLAGS)
 
 all: $(TARGETS)
 
-aad-pam: clean
-	g++ main.cpp jwt.cpp utils.cpp -lcurl -lrestclient-cpp -lcryptopp -lpthread $(CXXFLAGS) -I ../include/ -std=c++11 -o aad.o
+test: clean
+	g++ aad-test.cpp jwt.cpp utils.cpp -lcurl -lrestclient-cpp -lcryptopp -lpthread -lpam -lpam_misc $(CXXFLAGS) -I ../include/ -std=c++11 -o test-aad.out
 
-tests: clean
-	g++ -o tests main.cpp jwt.cpp utils.cpp tests.cpp -lcryptopp -lpthread -lunittest++ $(CXXFLAGS) -I ../include/ -std=c++11
+aad-pam: clean
+	g++ -fPIC -fno-stack-protector -c aad-pam.cpp jwt.cpp utils.cpp -lcurl -lrestclient-cpp -lcryptopp -lpthread $(CXXFLAGS) -I ../include/ -std=c++11
 
 clean: 
 	rm -f *.exe* *.o $(TARGETS) *.bak *~
+
+install:
