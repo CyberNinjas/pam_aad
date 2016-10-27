@@ -54,7 +54,6 @@ namespace jwtcpp {
         JWT* parse(const string& jwt)
     {
         size_t pos;
-
         // extracting the algorithm, payload, signature and data
         char* tok = strtok((char*) jwt.c_str(), ".");
         string raw_algorithm = (string) tok;
@@ -66,14 +65,23 @@ namespace jwtcpp {
         if (tok){
             signature = (string) tok;
         }else{
-            cout << "[*] WARNING: Your token is unsigned!\n[*] Processing without signature..." << endl;
+            cout << "\n[*] WARNING: Your token is unsigned!\n[*] Processing without signature...\n" << endl;
+            signature = " ";
         }
-
+        if (signature.empty()){
+            cout << "Signature is null!" << endl;
+            ParsingError e;
+            throw e;
+        }
         string signed_data = raw_algorithm + "." + raw_payload;
+        if (signed_data.empty()){
+            cout << "signed data is null! Exiting" << endl;
+            ParsingError e;
+            throw e;
+        }
 
         // decode json values for the algorithm and the payload
         string unparsed_header = decodeBase64(raw_algorithm);
-
         auto header = nlohmann::json::parse(unparsed_header);
 
         // check that the "alg" parameter is present. If not, throw an
@@ -83,7 +91,6 @@ namespace jwtcpp {
             ParsingError e;
             throw e;
         }
-
         string unparsed_payload = decodeBase64(raw_payload);
         auto payload = nlohmann::json::parse(unparsed_payload);
         JWT* obj = new JWT(algorithm, payload, signature, signed_data);

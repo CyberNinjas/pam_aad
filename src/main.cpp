@@ -3,6 +3,7 @@
 #define PAM_SM_PASSWORD
 #define PAM_SM_SESSION
 
+#include "jwt.h"
 #include "restclient-cpp/restclient.h"
 #include "restclient-cpp/connection.h"
 #include <security/pam_appl.h> 
@@ -16,6 +17,8 @@
 #include <unistd.h>
 
 using namespace std;
+using namespace jwtcpp;
+
 
 string getClientRequestId()
 {
@@ -26,7 +29,6 @@ string getClientRequestId()
 string  getDeviceCode(string tenant, string resource, string client_id)
 {
   string client_request_id = getClientRequestId();
-  cout << "making request" << std::endl;
   string url = "https://login.microsoftonline.com/" + tenant + "/oauth2/devicecode?resource=" + resource + "&client_id=" + client_id + "&client-request-id" + client_request_id;
   RestClient::Response r = RestClient::get(url);
   if (r.code == 200)
@@ -80,13 +82,17 @@ string pullTokenFromResponse(string response){
 }
 
 string decodeJWT(string id_token){
-  string user = "shane";
+  JWT* jwt = parse(id_token);
+  string user = jwt->fromPayload("upn");
+  if (user.empty()){
+    cout << "couldnt get user from payload" << endl;
+  }
+  cout << user << endl;
   return user; 
 }
 
 string pullUsernameFromIdToken(string response){
   auto parsed = nlohmann::json::parse(response);
-  cout << parsed["id_token"] << std::endl;
   string username = decodeJWT(parsed["id_token"]);
   return username;
 }
@@ -95,7 +101,6 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
   bool gotToken = false;
   string response;
   string deviceCodeMessage = getDeviceCode(tenant, resource, client_id);
-  cout << "got response" << std::endl;
   nlohmann::json request_dictionary = getUriMessage(deviceCodeMessage, resource, client_id);
   auto microsoft = nlohmann::json::parse(deviceCodeMessage);
   string message = microsoft["message"];
