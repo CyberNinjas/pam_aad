@@ -22,7 +22,8 @@ using namespace jwtcpp;
 
 string getClientRequestId()
 {
-  string client_request_id = "12345";
+  srand(time(NULL));
+  std::string client_request_id = std::to_string(rand() % 10000000 + 1);
   return client_request_id;
 }
 
