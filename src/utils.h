@@ -1,8 +1,6 @@
-extern "C" {
-#include "jansson.h"
-}
-
 using namespace std;
+#include "json.hpp"
+
 
 namespace jwtcpp {
 
@@ -39,7 +37,7 @@ namespace jwtcpp {
 	 * 
 	 * @return json_t* the json object
 	 **/
-	json_t* decodeJSONBytes(string input);
+	nlohmann::json decodeJSONBytes(string input);
 
 	/**
 	 * Base64-encode a json object.
@@ -47,5 +45,5 @@ namespace jwtcpp {
 	 * @param json_t* the json object
 	 * @return string the encoded value
 	 **/
-	string encodeJSONBytes(json_t* input);
+	string encodeJSONBytes(nlohmann::json input);
 }
