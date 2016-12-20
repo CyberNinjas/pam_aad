@@ -85,7 +85,7 @@ string decodeJWT(string id_token){
   JWT* jwt = parse(id_token);
   string user = jwt->fromPayload("upn");
   if (user.empty()){
-    cout << "couldnt get user from payload" << endl;
+    cout << "couldnt parse user from payload" << endl;
   }
   cout << user << endl;
   return user; 
