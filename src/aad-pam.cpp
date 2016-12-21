@@ -24,6 +24,7 @@ string getClientRequestId()
 {
   srand(time(NULL));
   std::string client_request_id = std::to_string(rand() % 10000000 + 1);
+  return client_request_id;
 }
 
 string  getDeviceCode(string tenant, string resource, string client_id)
