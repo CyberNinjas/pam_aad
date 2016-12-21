@@ -4,7 +4,7 @@ TARGETS = $(BINARIES)
 
 LINK.o = g++
 
-CFLAGS += -Werror -pedantic
+CFLAGS += -Werror
 
 CXXFLAGS += $(CFLAGS)
 
