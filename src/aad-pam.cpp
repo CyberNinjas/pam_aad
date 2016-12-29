@@ -1,8 +1,3 @@
-#define PAM_SM_ACCOUNT
-#define PAM_SM_AUTH
-#define PAM_SM_PASSWORD
-#define PAM_SM_SESSION
-
 #include "jwt.h"
 #include "restclient-cpp/restclient.h"
 #include "restclient-cpp/connection.h"
@@ -15,6 +10,7 @@
 #include "SimpleIni.h"
 #include "ClientConfig.h"
 #include <unistd.h>
+#include <stdio.h>
 
 using namespace std;
 using namespace jwtcpp;
@@ -99,7 +95,7 @@ string pullUsernameFromIdToken(string response){
 }
 
 int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
-  bool gotToken = false;
+  bool gotToken = true;
   string response;
   string deviceCodeMessage = getDeviceCode(tenant, resource, client_id);
   nlohmann::json request_dictionary = getUriMessage(deviceCodeMessage, resource, client_id);
@@ -111,16 +107,20 @@ int AuthenticateToMicrosoft(string tenant, string resource, string client_id){
     response = pollForToken(request_dictionary);
     gotToken = providedToken(response);
   } 
-  string token = pullTokenFromResponse(response);
-  string username = pullUsernameFromIdToken(response);
-  return PAM_SUCCESS; 
+  return PAM_SUCCESS;
 }
+//   string token = pullTokenFromResponse(response);
+//   string username = pullUsernameFromIdToken(response);
+//   return PAM_SUCCESS; 
+// }
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv){
+  printf("set cred\n");
   return PAM_SUCCESS;
 }
 
 PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const char **argv){
+  printf("account mgmt");
   return PAM_SUCCESS;
 }
 
@@ -128,6 +128,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
   const char *user = NULL;
   int pgu_ret;
   pgu_ret = pam_get_user(pamh, &user, "Enter 0365 username...");
+  printf("Welcome %s\n!", user);
   CSimpleIniA ini; 
   ini.SetUnicode();
   ini.LoadFile("etc/security/oauth.config.ini");
@@ -140,5 +141,10 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
     cout << "Yer failin" << std::endl;
     return(PAM_AUTH_ERR);
 } 
+  return(PAM_SUCCESS);
+}
+
+PAM_EXTERN int pam_tty_conv(int num_msg, struct pam_message **msg, struct pam_response **resp, void *my_data){
+  fputs(msg[0]->msg, stdout);
   return(PAM_SUCCESS);
 }
