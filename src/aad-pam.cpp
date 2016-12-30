@@ -135,7 +135,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
   string tenant = ini.GetValue("oauth", "tenant");
   string resource = ini.GetValue("oauth", "resource_id");
   string client_id = ini.GetValue("oauth", "client_id");
-  printf("Welcome %s\n", user);
+  pam_tty_conv(1, );
   pgu_ret = AuthenticateToMicrosoft(tenant, resource, client_id); 
   if (pgu_ret != PAM_SUCCESS){
     cout << "Yer failin" << std::endl;
@@ -144,7 +144,30 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
   return(PAM_SUCCESS);
 }
 
-PAM_EXTERN int pam_tty_conv(int num_msg, struct pam_message **msg, struct pam_response **resp, void *my_data){
-  fputs(msg[0]->msg, stdout);
-  return(PAM_SUCCESS);
+int converse(pam_handle_t *pamh, int nargs,
+                    PAM_CONST struct pam_message **message,
+                    struct pam_response **response) {
+  struct pam_conv *conv;
+  int retval = pam_get_item(pamh, PAM_CONV, (void *)&conv);
+  if (retval != PAM_SUCCESS) {
+    return retval;
+  }
+  return conv->conv(nargs, message, response, conv->appdata_ptr);
+}
+
+char *request_signin(pam_handle_t *pamh, int echocode, PAM_CONST char *prompt){
+  PAM_CONST struct pam_message msg = {.msg_style = echocode, 
+                                           .msg = prompt};
+
+  PAM_CONST struct pam_message *msgs = &msg;
+
+  struct pam_response *resp = NULL;
+
+  int retval = converse(pamh, 1, &msgs, &resp);
+
+  char *ret = NULL;
+  
+  ret = resp->resp;
+
+  return (ret);
 }
