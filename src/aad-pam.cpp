@@ -169,17 +169,17 @@ int converse(pam_handle_t *pamh, int nargs,
                     PAM_CONST struct pam_message **message,
                     struct pam_response **response) {
   log_message(LOG_INFO, pamh, "converse function started");
-  const void *conv;
+  struct pam_conv *conv;
   int retval = pam_get_item(pamh, PAM_CONV, &conv);
   log_message(LOG_INFO, pamh, "got item");
   if (retval != PAM_SUCCESS) {
     return retval;
   }
-  return retval;
+  return conv -> conv(nargs, message, response, conv->appdata_ptr);
 }
 
 char *request_signin(pam_handle_t *pamh, int echocode, PAM_CONST char *prompt){
-  PAM_CONST struct pam_message msg = {.msg_style = echocode, 
+  PAM_CONST struct pam_message msg = {.msg_style = PAM_TEXT_INFO, 
                                            .msg = prompt};
 
   PAM_CONST struct pam_message *msgs = &msg;
@@ -215,7 +215,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
   struct pam_response *resp = NULL;
   log_message(LOG_INFO, pamh, "About to converse...");
   int retval = converse(pamh, 1, &msgs, &resp);
-  log_message(LOG_INFO, pamh, "Converse functionw as run.");
+  log_message(LOG_INFO, pamh, "Converse function was run.");
   if (pgu_ret != PAM_SUCCESS){
     cout << "Yer failin" << std::endl;
     return(PAM_AUTH_ERR);
