@@ -11,7 +11,10 @@
 #include "ClientConfig.h"
 #include <unistd.h>
 #include <stdio.h>
+#include <syslog.h>
+#include <cstdarg>
 
+#define MODULE_NAME "pam_aad_authenticator"
 #ifdef sun 
 #define PAM_CONST
 #else
@@ -21,6 +24,38 @@
 using namespace std;
 using namespace jwtcpp;
 
+static void log_message(int priority, pam_handle_t *pamh,
+                        const char *format, ...) {
+  char logname[80];
+  snprintf(logname, sizeof(logname), "%s(" MODULE_NAME ")");
+
+  va_list args;
+  va_start(args, format);
+#if !defined(DEMO) && !defined(TESTING)
+  openlog(logname, LOG_CONS | LOG_PID, LOG_AUTHPRIV);
+  vsyslog(priority, format, args);
+  closelog();
+#else
+  if (!error_msg) {
+    error_msg = strdup("");
+  }
+  {
+    char buf[1000];
+    vsnprintf(buf, sizeof buf, format, args);
+    const int newlen = strlen(error_msg) + 1 + strlen(buf) + 1;
+    char* n = malloc(newlen);
+    if (n) {
+      snprintf(n, newlen, "%s%s%s", error_msg, strlen(error_msg)?"\n":"",buf);
+      free(error_msg);
+      error_msg = n;
+    } else {
+      fprintf(stderr, "Failed to malloc %d bytes for log data.\n", newlen);
+    }
+  }
+#endif
+
+  va_end(args);
+}
 
 string getClientRequestId()
 {
@@ -162,6 +197,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
   const char *user = NULL;
   int pgu_ret;
   pgu_ret = pam_get_user(pamh, &user, "Enter 0365 username...");
+  log_message(LOG_INFO, pamh, "debug: starting up aad_authenticator for user %s", user);
   printf("Welcome %s\n!", user);
   CSimpleIniA ini; 
   ini.SetUnicode();
