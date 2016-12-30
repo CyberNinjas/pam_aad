@@ -168,12 +168,14 @@ PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const c
 int converse(pam_handle_t *pamh, int nargs,
                     PAM_CONST struct pam_message **message,
                     struct pam_response **response) {
-  struct pam_conv *conv;
-  int retval = PAM_SUCCESS;
+  log_message(LOG_INFO, pamh, "converse function started");
+  const void *conv;
+  int retval = pam_get_item(pamh, PAM_CONV, &conv);
+  log_message(LOG_INFO, pamh, "got item");
   if (retval != PAM_SUCCESS) {
     return retval;
   }
-  return conv->conv(nargs, message, response, conv->appdata_ptr);
+  return retval;
 }
 
 char *request_signin(pam_handle_t *pamh, int echocode, PAM_CONST char *prompt){
@@ -198,7 +200,6 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
   int pgu_ret;
   pgu_ret = pam_get_user(pamh, &user, "Enter 0365 username...");
   log_message(LOG_INFO, pamh, "debug: starting up aad_authenticator for user %s", user);
-  printf("Welcome %s\n!", user);
   CSimpleIniA ini; 
   ini.SetUnicode();
   ini.LoadFile("etc/security/oauth.config.ini");
@@ -212,7 +213,9 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
   PAM_CONST struct pam_message *msgs = &msg;
 
   struct pam_response *resp = NULL;
+  log_message(LOG_INFO, pamh, "About to converse...");
   int retval = converse(pamh, 1, &msgs, &resp);
+  log_message(LOG_INFO, pamh, "Converse functionw as run.");
   if (pgu_ret != PAM_SUCCESS){
     cout << "Yer failin" << std::endl;
     return(PAM_AUTH_ERR);
