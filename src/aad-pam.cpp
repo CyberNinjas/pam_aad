@@ -12,6 +12,12 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#ifdef sun 
+#define PAM_CONST
+#else
+#define PAM_CONST const
+#endif
+
 using namespace std;
 using namespace jwtcpp;
 
@@ -124,31 +130,11 @@ PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const c
   return PAM_SUCCESS;
 }
 
-PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv){
-  const char *user = NULL;
-  int pgu_ret;
-  pgu_ret = pam_get_user(pamh, &user, "Enter 0365 username...");
-  printf("Welcome %s\n!", user);
-  CSimpleIniA ini; 
-  ini.SetUnicode();
-  ini.LoadFile("etc/security/oauth.config.ini");
-  string tenant = ini.GetValue("oauth", "tenant");
-  string resource = ini.GetValue("oauth", "resource_id");
-  string client_id = ini.GetValue("oauth", "client_id");
-  pam_tty_conv(1, );
-  pgu_ret = AuthenticateToMicrosoft(tenant, resource, client_id); 
-  if (pgu_ret != PAM_SUCCESS){
-    cout << "Yer failin" << std::endl;
-    return(PAM_AUTH_ERR);
-} 
-  return(PAM_SUCCESS);
-}
-
 int converse(pam_handle_t *pamh, int nargs,
                     PAM_CONST struct pam_message **message,
                     struct pam_response **response) {
   struct pam_conv *conv;
-  int retval = pam_get_item(pamh, PAM_CONV, (void *)&conv);
+  int retval = PAM_SUCCESS;
   if (retval != PAM_SUCCESS) {
     return retval;
   }
@@ -171,3 +157,30 @@ char *request_signin(pam_handle_t *pamh, int echocode, PAM_CONST char *prompt){
 
   return (ret);
 }
+
+PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv){
+  const char *user = NULL;
+  int pgu_ret;
+  pgu_ret = pam_get_user(pamh, &user, "Enter 0365 username...");
+  printf("Welcome %s\n!", user);
+  CSimpleIniA ini; 
+  ini.SetUnicode();
+  ini.LoadFile("etc/security/oauth.config.ini");
+  string tenant = ini.GetValue("oauth", "tenant");
+  string resource = ini.GetValue("oauth", "resource_id");
+  string client_id = ini.GetValue("oauth", "client_id");
+  pgu_ret = AuthenticateToMicrosoft(tenant, resource, client_id); 
+  PAM_CONST struct pam_message msg = {.msg_style = 0, 
+                                      .msg = "HEY!!!! YOU!!! PAY ATTENTION!!!"};
+  
+  PAM_CONST struct pam_message *msgs = &msg;
+
+  struct pam_response *resp = NULL;
+  int retval = converse(pamh, 1, &msgs, &resp);
+  if (pgu_ret != PAM_SUCCESS){
+    cout << "Yer failin" << std::endl;
+    return(PAM_AUTH_ERR);
+} 
+  return(PAM_SUCCESS);
+}
+
