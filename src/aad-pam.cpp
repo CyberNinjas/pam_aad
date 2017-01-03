@@ -161,7 +161,7 @@ PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const cha
 }
 
 PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const char **argv){
-  printf("account mgmt");
+  printf("account mgmt\n");
   return PAM_SUCCESS;
 }
 
@@ -170,53 +170,45 @@ int converse(pam_handle_t *pamh, int nargs,
                     struct pam_response **response) {
   log_message(LOG_INFO, pamh, "converse function started");
   struct pam_conv *conv;
-  int retval = pam_get_item(pamh, PAM_CONV, &conv);
-  log_message(LOG_INFO, pamh, "got item");
+  printf("PAMTESTER_CHECk");
+  int retval = pam_get_item(pamh, PAM_CONV, (void *)&conv);
+  log_message(LOG_INFO, pamh, "end of function");
   if (retval != PAM_SUCCESS) {
     return retval;
   }
   return conv -> conv(nargs, message, response, conv->appdata_ptr);
 }
 
-char *request_signin(pam_handle_t *pamh, int echocode, PAM_CONST char *prompt){
-  PAM_CONST struct pam_message msg = {.msg_style = PAM_TEXT_INFO, 
-                                           .msg = prompt};
-
-  PAM_CONST struct pam_message *msgs = &msg;
-
-  struct pam_response *resp = NULL;
-
-  int retval = converse(pamh, 1, &msgs, &resp);
-
-  char *ret = NULL;
-  
-  ret = resp->resp;
-
-  return (ret);
-}
-
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv){
+  printf("Auth started\n");
   const char *user = NULL;
   int pgu_ret;
+  printf("Getting a username?\n");
   pgu_ret = pam_get_user(pamh, &user, "Enter 0365 username...");
   log_message(LOG_INFO, pamh, "debug: starting up aad_authenticator for user %s", user);
   CSimpleIniA ini; 
   ini.SetUnicode();
   ini.LoadFile("etc/security/oauth.config.ini");
+  printf("loading\n");
   string tenant = ini.GetValue("oauth", "tenant");
+  const char *my_tenant = tenant.c_str();
+  log_message(LOG_INFO, pamh, "debug: loaded tenant is %s", my_tenant);
+  printf("can't get value?\n");
   string resource = ini.GetValue("oauth", "resource_id");
   string client_id = ini.GetValue("oauth", "client_id");
+  printf("Calling Microsoft...\n");
   pgu_ret = AuthenticateToMicrosoft(tenant, resource, client_id); 
   PAM_CONST struct pam_message msg = {.msg_style = 0, 
-                                      .msg = "HEY!!!! YOU!!! PAY ATTENTION!!!"};
+                                      .msg = "HEY!!!! YOU!!"};
   
   PAM_CONST struct pam_message *msgs = &msg;
 
   struct pam_response *resp = NULL;
+  printf("About to converse...\n");
   log_message(LOG_INFO, pamh, "About to converse...");
-  int retval = converse(pamh, 1, &msgs, &resp);
+  int retval = converse(pamh, 5, &msgs, &resp);
   log_message(LOG_INFO, pamh, "Converse function was run.");
-  if (pgu_ret != PAM_SUCCESS){
+  if (retval != PAM_SUCCESS){
     cout << "Yer failin" << std::endl;
     return(PAM_AUTH_ERR);
 } 
