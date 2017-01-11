@@ -24,7 +24,7 @@
 #endif
 
 #define MODULE_NAME "pam_azure_authenticator"
-#define CODE_PROMPT "Enter the following code at login"
+#define CODE_PROMPT "This is a custom prompt: "
 
 typedef struct Params {
     int         echocode;
@@ -145,6 +145,7 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
 
   username = get_user_name(pamh, &params);
   pw = request_pass(pamh, params.echocode, prompt);
+  return PAM_SUCCESS;
 }
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags,

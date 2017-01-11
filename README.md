@@ -18,6 +18,16 @@ make
 sudo make install
 ```
 
+## Installation
+
+```
+./buildPam.sh
+```
+
+## Configuration
+Edit ```/etc/pam.d/sshd``` with your favorite text editor and add the following line at the top:
+
+```auth required aad.so``` 
 
 
 
