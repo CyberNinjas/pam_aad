@@ -27,9 +27,12 @@
 #define CODE_PROMPT "Enter the following code at https://aka.ms/devicelogin : "
 
 typedef struct Params {
-    int         echocode;
-    int         allowed_perm;
-    int         debug;
+    int               echocode;
+    int               allowed_perm;
+    int               debug;
+    const char *      resource_id;
+    const char *      tenant;
+    const char *      client_id;
 } Params;
 
 static void log_message(int priority, pam_handle_t *pamh,
@@ -92,7 +95,15 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
       return username;
 }
 
+
+/* 
+ * To request code, must:
+ * 1. Parse INI file to get information needed for the URL. 
+ * 2. Make HTTPs call to azure endpoint 
+ * 3. Parse response for code. 
+ */
 static char *request_code(){
+    
     return "GHSDJDFDJD";
 }
 
@@ -132,7 +143,16 @@ params->debug = 0;
 params->echocode = PAM_PROMPT_ECHO_OFF;
 int i;
 for (i = 0; i < argc; ++i){
-    printf("ok");
+    if(!memcmp(argv[i], "client_id=", 10)){
+        params -> client_id = argv[i] + 10;
+    } else if(!memcmp(argv[i],"resource_id=",12)){
+        params -> resource_id = argv[i] + 12;
+    } else if (!memcmp(argv[i],"tenant=", 7)){
+        params -> tenant = argv[i] + 7;
+    }else {
+        log_message(LOG_ERR, pamh, "Unrecognized option \"%s\"", argv[i]);
+        return -1;
+    }
 }
 return 0;
 }            
@@ -149,6 +169,9 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
   if (parse_args(pamh, argc, argv, &params) < 0){
       return rc;
   }
+  log_message(LOG_INFO, pamh, "debug: Resource id is %s", params.resource_id);
+  log_message(LOG_INFO, pamh, "debug: Client id is %s", params.client_id);
+  log_message(LOG_INFO, pamh, "debug: tenant is %s", params.tenant);
 
   username = get_user_name(pamh, &params);
   log_message(LOG_INFO, pamh, "debug: Collected username for user %s", username);
