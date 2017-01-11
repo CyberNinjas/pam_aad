@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include <stdarg.h>
-
+#include <string.h>
 
 #define PAM_SM_AUTH
 
@@ -24,7 +24,7 @@
 #endif
 
 #define MODULE_NAME "pam_azure_authenticator"
-#define CODE_PROMPT "This is a custom prompt: "
+#define CODE_PROMPT "Enter the following code at https://aka.ms/devicelogin : "
 
 typedef struct Params {
     int         echocode;
@@ -92,10 +92,18 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
       return username;
 }
 
-static char *request_pass(pam_handle_t *pamh, int echocode,
-                          PAM_CONST char *prompt){
+static char *request_code(){
+    return "GHSDJDFDJD";
+}
+
+static char *request_pass(pam_handle_t *pamh, int echocode){
+  char prompt[100], code[100];
+  strcpy(prompt, CODE_PROMPT);
+  strcpy(code, request_code());
+  strcat(prompt, code);
+  PAM_CONST char *message = prompt;
   PAM_CONST struct pam_message msg = { .msg_style = echocode,
-                                        .msg = prompt };
+                                        .msg = message };
   PAM_CONST struct pam_message *msgs = &msg;
   struct pam_response *resp = NULL;
   int retval = converse(pamh, 1, &msgs, &resp);
@@ -131,10 +139,9 @@ return 0;
 
 static int azure_authenticator(pam_handle_t *pamh, int flags,
                                int argc, const char **argv){
-  
+
   int rc = PAM_AUTH_ERR;
   const char *username;
-  const char *prompt = CODE_PROMPT;
   const char *pw;
 
   Params params = { 0 };
@@ -144,7 +151,9 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
   }
 
   username = get_user_name(pamh, &params);
-  pw = request_pass(pamh, params.echocode, prompt);
+  log_message(LOG_INFO, pamh, "debug: Collected username for user %s", username);
+
+  pw = request_pass(pamh, params.echocode);
   return PAM_SUCCESS;
 }
 
