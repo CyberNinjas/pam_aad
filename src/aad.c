@@ -17,10 +17,10 @@
 #define LOG_AUTHPRIV LOG_AUTH
 #endif
 
-#ifdef sun 
+#ifdef sun
 #define PAM_CONST
 #else
-#define PAM_CONST const 
+#define PAM_CONST const
 #endif
 
 #define MODULE_NAME "pam_azure_authenticator"
@@ -102,8 +102,7 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
  * 2. Make HTTPs call to azure endpoint 
  * 3. Parse response for code. 
  */
-static char *request_code(){
-    
+static char *request_code(const char *resource_id, const char *client_id, const char *tenant){
     return "GHSDJDFDJD";
 }
 
@@ -175,7 +174,7 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
 
   username = get_user_name(pamh, &params);
   log_message(LOG_INFO, pamh, "debug: Collected username for user %s", username);
-
+  char *code = request_code(params.resource_id, params.client_id, params.tenant);
   pw = request_pass(pamh, params.echocode);
   return PAM_SUCCESS;
 }
