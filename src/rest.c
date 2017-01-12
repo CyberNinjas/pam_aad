@@ -1,63 +1,107 @@
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/bio.h>
 
-#include <netinet/tcp.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <netdb.h>
+#define HOST "login.microsoftonline.com"
+#define PORT "443"
 
-int socket_connect(char *host, in_port_t port){
-    struct hostent *hp;
-    struct sockaddr_in addr;
-    int on = 1, sock;
+int read_code_from_microsoft(const char *resource_id, const char *client_id, const char *tenant){
+    //initialize variables
 
-    if ((hp = gethostbyname(host)) == NULL){
-        herror("gethostbyname");
-        exit(1);
+    BIO* bio;
+    SSL* ssl;
+    SSL_CTX* ctx;
+
+    // Registers the available SSL/TLS ciphers
+    // Starts security layer
+
+    SSL_library_init();
+
+    //creates a new SSL_CTX object as framework to establish TLS/SSL enabled connections
+
+    ctx = SSL_CTX_new(SSLv23_client_method());
+
+    if (ctx == NULL)
+    {
+        printf("Ctx is null\n");
     }
-    bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
-    addr.sin_port = htons(port);
-    addr.sin_family = AF_INET;
-    sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&on, sizeof(int));
+    
+    //Creates a new BIO chain consisting of an SSL BIO
 
-    if(sock == -1){
-        perror("setsockopt");
-        exit(1);
+    bio = BIO_new_ssl_connect(ctx);
+
+    // uses the string name to set the hostname
+
+    BIO_set_conn_hostname(bio, HOST ":" PORT);
+
+    if(BIO_do_connect(bio) <= 0)
+    {
+        printf("Failed connection\n");
+        return 1;
     }
-
-    if(connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1){
-        perror("connect");
-        exit(1);
-    }
-    return sock;
-}
-
-#define BUFFER_SIZE 1024
-
-int main(int argc, char *argv[]){
-    int fd; 
-    char buffer[BUFFER_SIZE];
-
-    if(argc < 3){
-        fprintf(stderr, "Usage: %s <hostname> <port>\n", argv[0]);
-        exit(1);
-    }
-    fd = socket_connect(argv[1], atoi(argv[2]));
-    write(fd, "GET /\r\n", strlen("GET /\r\n"));
-    bzero(buffer, BUFFER_SIZE);
-
-    while(read(fd, buffer, BUFFER_SIZE -1) != 0){
-        fprintf(stderr, "%s", buffer);
-        bzero(buffer, BUFFER_SIZE);
+    else{
+        printf("Connected\n");
     }
 
-    shutdown(fd, SHUT_RDWR);
-    close(fd);
+    // Data to create a HTTP request 
+    char * write_buf = "POST /digipirates.onmicrosoft.com/oauth2/devicecode/ HTTP/1.1\r\n"
+                        "Host: " HOST "\r\n"
+                        "Connection: close \r\n"
+                        "User-Agent: azure_authenticator_pam/1.0 \r\n"
+                        "Content-Length: 148\r\n"
+                        "\r\n"
+                        "?resource=00000002-0000-0000-c000-000000000000&client_id=34251358-1168-40c3-aced-100ee9b03090&client_request_id=7262ee1e-6f52-4855-867c-727fc64b26d5\r\n"
+                        "\r\n";
+
+    //Attempts to write len bytes from buf to BIO
+    if (BIO_write(bio, write_buf, strlen(write_buf)) <= 0)
+    {
+        //handle failed write here
+        if (!BIO_should_retry(bio))
+        {
+            printf("Do retry\n");
+        }
+
+        printf("Failed write\n");
+    }
+
+    //Variables used to read the response from the server
+    int size;
+    char buf[1024];
+
+    // Read the response
+    for (;;)
+    {
+        size = BIO_read(bio, buf, 1023);
+
+        //If no more data, than exit the loop
+        if(size <= 0)
+        {
+            printf("\n\n");
+            break;
+        }
+        buf[size] = 0;
+        printf("%s", buf);
+    }
+
+    BIO_free_all(bio);
+    SSL_CTX_free(ctx);
 
     return 0;
+}
+//purely for testing, takes no command line args
+int main(){
+    //initialize variables
+    const char *resource_id;
+    const char *client_id;
+    const char *tenant;
+
+    //Provide hardcoded values for testing
+    resource_id = "00000002-0000-0000-c000-000000000000";
+    client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
+    tenant = "virtualvikings.onmicrosoft.com";
+
+    read_code_from_microsoft(resource_id, client_id, tenant);
+
 }
