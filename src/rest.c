@@ -26,6 +26,7 @@ int get_client_id(char *client_id){
  *
  * end:      pointer that will contain the index of the end of the json body.
  *
+ * returns an integer that indicates that the function successfully completed. 
  */ 
 
 int find_json_bounds(char *json_buf, int &start, int &end){
