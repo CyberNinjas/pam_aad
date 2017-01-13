@@ -16,18 +16,31 @@ int get_client_id(char *client_id){
     sprintf(client_id, "%ld", random);
     return 0;
 }
+/*
+ *
+ * Function: find_json_bounds
+ *---------------------------
+ * json_buf: contains a full http response that includes json.
+ * 
+ * start:    pointer that will contain the index of the start of the json body. 
+ *
+ * end:      pointer that will contain the index of the end of the json body.
+ *
+ */ 
 
-int parse_code_from_response(char *json_buf, int *start, int *end){
+int find_json_bounds(char *json_buf, int &start, int &end){
     int i;
     int j;
     for(i = 0; json_buf[i] != '{'; i++){
     }
     printf("first assignment\n");
-    *start = i;
+    start = i;
     printf("after first assignment\n");
     for(j = i; json_buf[j] != '}'; j++){
     }
-    *end = j;
+    end = j;
+    printf("\nthe start is %d\n", start);
+    printf("\nthe end is %d\n", end);
     return 0;
 }
 
@@ -138,20 +151,19 @@ int main(){
     char response_buf[2048];
     char code_buf[100];
 
-    int *start;
-    int *end;
+    int start;
+    int end;
 
     char client_id_buf[15];
     /* Provide hardcoded values for testing */
     resource_id = "00000002-0000-0000-c000-000000000000";
     client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
     tenant = "digipirates.onmicrosoft.com";
-    
-    get_client_id(client_id_buf);
-    printf("Val is %s\n", client_id_buf);
 
     read_code_from_microsoft(resource_id, client_id, tenant, response_buf);
-    parse_code_from_response(response_buf, start, end);
+    find_json_bounds(response_buf, start, end);
+    printf("\nthe start is %d\n", start);
+    printf("\nthe end is %d\n", end);
     
     return 0;
 }
