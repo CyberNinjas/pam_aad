@@ -2,12 +2,32 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/bio.h>
+#include <time.h>
+#include <stdlib.h>
+
+#include "cJSON.h"
 
 #define HOST "login.microsoftonline.com"
 #define PORT "443"
 
-int parse_code_from_response(char *json_buf, char *code_buf){
+int get_client_id(char *client_id){
+    srand(time(NULL));
+    int random = rand();
+    sprintf(client_id, "%ld", random);
+    return 0;
+}
 
+int parse_code_from_response(char *json_buf, int *start, int *end){
+    int i;
+    int j;
+    for(i = 0; json_buf[i] != '{'; i++){
+    }
+    printf("first assignment\n");
+    *start = i;
+    printf("after first assignment\n");
+    for(j = i; json_buf[j] != '}'; j++){
+    }
+    *end = j;
     return 0;
 }
 
@@ -117,12 +137,21 @@ int main(){
     const char *tenant;
     char response_buf[2048];
     char code_buf[100];
+
+    int *start;
+    int *end;
+
+    char client_id_buf[15];
     /* Provide hardcoded values for testing */
     resource_id = "00000002-0000-0000-c000-000000000000";
     client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
     tenant = "digipirates.onmicrosoft.com";
+    
+    get_client_id(client_id_buf);
+    printf("Val is %s\n", client_id_buf);
 
     read_code_from_microsoft(resource_id, client_id, tenant, response_buf);
-    parse_code_from_response(response_buf, code_buf);
+    parse_code_from_response(response_buf, start, end);
+    
     return 0;
 }
