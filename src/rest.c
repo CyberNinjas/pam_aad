@@ -6,9 +6,13 @@
 #define HOST "login.microsoftonline.com"
 #define PORT "443"
 
-int read_code_from_microsoft(const char *resource_id, const char *client_id, const char *tenant){
-    /* initialize variables */
+int parse_code_from_response(char *json_buf, char *code_buf){
 
+    return 0;
+}
+
+int read_code_from_microsoft(const char *resource_id, const char *client_id, const char *tenant, char *response_buf){
+    /* initialize variables */
     BIO* bio;
     /* SSL* ssl; */
     SSL_CTX* ctx;
@@ -21,6 +25,7 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
 
     char write_buf[2048];
 
+    strcpy(response_buf, " ");
     /* Registers the available SSL/TLS ciphers */
     /* Starts security layer */
 
@@ -51,18 +56,14 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
     else{
         printf("Connected\n");
     }
-    printf("Directly before strcpy\n");
     strcpy(post_buf, "text");
-    printf("strcpy ran fine\n");
     strcat(post_buf, resource_id);
-    printf("first strcat\n");
     strcat(post_buf, "&client_id=");
     strcat(post_buf, client_id);
+    strcat(post_buf, "&client_request_id=");
     /* TODO: Change the below for a legitimate client request id, randomly generated */
     strcat(post_buf, "5929459294929");
 
-
-    printf("post buf initialized\n");
     /* Data to create a HTTP request */
     strcpy(write_buf, "POST /");
     strcat(write_buf, tenant);
@@ -99,7 +100,7 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
             break;
         }
         buf[size] = 0;
-        printf("%s", buf);
+        strcat(response_buf, buf);
     }
 
     BIO_free_all(bio);
@@ -107,18 +108,21 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
 
     return 0;
 }
+
 /* purely for testing, takes no command line args */
 int main(){
     /* initialize variables */
     const char *resource_id;
     const char *client_id;
     const char *tenant;
-
+    char response_buf[2048];
+    char code_buf[100];
     /* Provide hardcoded values for testing */
     resource_id = "00000002-0000-0000-c000-000000000000";
-    client_id = "4098f446-54a5-4526-b2ef-f5f2cec62846";
-    tenant = "cyberninjas.com";
+    client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
+    tenant = "digipirates.onmicrosoft.com";
 
-    read_code_from_microsoft(resource_id, client_id, tenant);
+    read_code_from_microsoft(resource_id, client_id, tenant, response_buf);
+    parse_code_from_response(response_buf, code_buf);
     return 0;
 }
