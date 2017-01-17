@@ -112,16 +112,16 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
  *
 */
 
-static char *request_code(const char *resource_id, const char *client_id, const char *tenant){
-    char *code;
-    request_azure_signin_code(code, resource_id, client_id, tenant);
-    return code;
+static int *request_code(char *code_buf, const char *resource_id, const char *client_id, const char *tenant){
+    request_azure_signin_code(code_buf, resource_id, client_id, tenant);
+    return 0;
 }
 
 static char *request_pass(pam_handle_t *pamh, int echocode, const char *resource_id, const char *client_id, const char *tenant){
-  char prompt[100], code[100];
+  char prompt[100], code[100], code_buf[100];
   strcpy(prompt, CODE_PROMPT);
-  strcpy(code, request_code(resource_id, client_id, tenant));
+  request_code(code_buf, resource_id, client_id, tenant);
+  strcpy(code, code_buf);
   strcat(prompt, code);
   strcat(prompt, "\nPlease hit enter after you have logged in.");
   PAM_CONST char *message = prompt;
