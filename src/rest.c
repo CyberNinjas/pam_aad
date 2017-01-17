@@ -226,6 +226,5 @@ int main(){
     json = cJSON_Parse(json_buf);
     code = cJSON_GetObjectItem(json, "user_code")->valuestring;
     printf("%s\n", code);
-
     return 0;
 }

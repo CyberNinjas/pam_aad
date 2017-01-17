@@ -7,6 +7,8 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "rest.h"
+
 #define PAM_SM_AUTH
 
 #ifndef PAM_EXTERN
@@ -111,13 +113,15 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
 */
 
 static char *request_code(const char *resource_id, const char *client_id, const char *tenant){
-    return "rso;gfjsf";
+    char *code;
+    request_azure_signin_code(code, resource_id, client_id, tenant);
+    return code;
 }
 
-static char *request_pass(pam_handle_t *pamh, int echocode){
+static char *request_pass(pam_handle_t *pamh, int echocode, const char *resource_id, const char *client_id, const char *tenant){
   char prompt[100], code[100];
   strcpy(prompt, CODE_PROMPT);
-  strcpy(code, request_code());
+  strcpy(code, request_code(resource_id, client_id, tenant));
   strcat(prompt, code);
   PAM_CONST char *message = prompt;
   PAM_CONST struct pam_message msg = { .msg_style = echocode,
@@ -182,8 +186,7 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
 
   username = get_user_name(pamh, &params);
   log_message(LOG_INFO, pamh, "debug: Collected username for user %s", username);
-  char *code = request_code(params.resource_id, params.client_id, params.tenant);
-  pw = request_pass(pamh, params.echocode);
+  pw = request_pass(pamh, params.echocode, params.resource_id, params.client_id, params.tenant);
   return PAM_SUCCESS;
 }
 
