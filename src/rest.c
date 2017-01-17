@@ -347,6 +347,7 @@ int request_azure_signin_code(char *code, const char *resource_id, const char *c
 /* purely for testing, takes no command line args */
 int main(int argc, char *argv[]){
     /* initialize variables */
+    printf("%d\n", argc);
     const char *resource_id;
     const char *client_id;
 
@@ -354,20 +355,14 @@ int main(int argc, char *argv[]){
     char code_buf[100];
     char json_buf[2048];
     cJSON *json; 
-    const char *code;
+    char *code;
 
     int start, end;
-
     /* Provide hardcoded values for testing */
     resource_id = "00000002-0000-0000-c000-000000000000";
     client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
-    tenant = "digipirates.onmicrosoft.com";
-    strcpy(code, argv[1]);
-    read_code_from_microsoft(code, resource_id, client_id response_buf);
-    find_json_bounds(response_buf, &start, &end);
-    fill_json_buffer(json_buf, response_buf, &start, &end);
-    json = cJSON_Parse(json_buf);
-    code = cJSON_GetObjectItem(json, "user_code")->valuestring;
-    printf("%s\n", code);
+    strcpy(code, argv[2]);
+    printf("past that bit\n");
+    request_azure_oauth_token(code, resource_id, client_id, response_buf);
     return 0;
 }
