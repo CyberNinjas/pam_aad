@@ -11,6 +11,143 @@
 #define PORT "443"
 
 /*
+ * Function: poll_microsoft_for_token
+ * ----------------------------------
+ * *code: char array containing the device code used in the user's prompt.
+ *
+ * *resource_id: char array containing the resource id
+ *
+ * *client_id: char array containing the client id 
+ *
+ * *response_buf: empty buffer to include the response in.
+ *
+ * returns 0 if completion is successful, 1 if it fails.
+ */
+
+int poll_microsoft_for_token(char *code, const char *resource_id, const char *client_id, char *response_buf){
+     /* initialize variables */
+    BIO* bio;
+    /* SSL* ssl; */
+    SSL_CTX* ctx;
+    
+    char post_buf[1024];
+
+    /* Variables used to read the response from the server */
+    int size;
+    char buf[1024];
+
+    char write_buf[2048];
+
+    strcpy(response_buf, " ");
+    /* Registers the available SSL/TLS ciphers */
+    /* Starts security layer */
+
+    SSL_library_init();
+
+    /* creates a new SSL_CTX object as framework to establish TLS/SSL enabled connections */
+
+    ctx = SSL_CTX_new(SSLv23_client_method());
+
+    if (ctx == NULL)
+    {
+        printf("Ctx is null\n");
+    }
+    
+    /* Creates a new BIO chain consisting of an SSL BIO */
+
+    bio = BIO_new_ssl_connect(ctx);
+
+    /* uses the string name to set the hostname */
+
+    BIO_set_conn_hostname(bio, HOST ":" PORT);
+
+    if(BIO_do_connect(bio) <= 0)
+    {
+        printf("Failed connection\n");
+        return 1;
+    }
+    else{
+        printf("Connected\n");
+    }
+
+    strcpy(post_buf, "resource=");
+    strcat(post_buf, resource_id);
+    strcat(post_buf, "&client_id=");
+    strcat(post_buf, client_id);
+    strcat(post_buf, "&grant_type=device_code&code=");
+    strcat(post_buf, code);
+
+    /* Data to create a HTTP request */
+    strcpy(write_buf, "POST /");
+    strcat(write_buf, "/common/oauth2/token/ HTTP/1.1\r\n");
+    strcat(write_buf, "Host: " HOST "\r\n");
+    strcat(write_buf, "Connection: close \r\n");
+    strcat(write_buf, "User-Agent: azure_authenticator_pam/1.0 \r\n");
+    strcat(write_buf, "Content-Length: 100\r\n");
+    strcat(write_buf, "\r\n");
+    strcat(write_buf, post_buf);
+    strcat(write_buf, "\r\n");
+
+    /* Attempts to write len bytes from buf to BIO */ 
+    if (BIO_write(bio, write_buf, strlen(write_buf)) <= 0)
+    {
+        /* handle failed write here */ 
+        if (!BIO_should_retry(bio))
+        {
+            printf("Do retry\n");
+        }
+
+        printf("Failed write\n");
+    }
+
+    /* Read the response */
+    for (;;)
+    {
+        size = BIO_read(bio, buf, 1023);
+
+        /* If no more data, than exit the loop */
+        if(size <= 0)
+        {
+            break;
+        }
+        buf[size] = 0;
+        strcat(response_buf, buf);
+    }
+
+    BIO_free_all(bio);
+    SSL_CTX_free(ctx);
+
+    return 0;
+}
+
+/*
+ * Function: request_azure_oauth_token
+ * -----------------------------------
+ * *code: char array containing the device code used in the user's prompt.
+ *
+ * *resource_id: char array containing the resource id
+ *
+ * *client_id: char array containing the client id 
+ *
+ * *response_buf: empty buffer to include the response in.
+ *
+ * token_buf:  empty buffer to include the authentication token in
+ *
+ * returns a 0 if the function completes successfully, and 0 otherwise.
+ */
+int request_azure_oauth_token(char *code, const char *resource_id, const char *client_id, char *response_buf, char *token_buf){
+    int start, end;
+    char json_buf[2048];
+    cJSON *json; 
+    
+    poll_microsoft_for_token(code, resource_id, client_id, response_buf);
+    find_json_bounds(response_buf, &start, &end);
+    fill_json_buffer(json_buf, response_buf, &start, &end);
+    json = cJSON_Parse(json_buf);
+    return 0;
+}
+
+/*
  * Function: fill_json_buffer
  * --------------------------
  * *json_buf: char array that will hold the json message contained in raw_response
