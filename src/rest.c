@@ -59,13 +59,10 @@ int get_client_id(char *client_id){
  */ 
 
 int find_json_bounds(char *json_buf, int *start, int *end){
-    int i;
-    int j;
-    for(i = 0; json_buf[i] != '{'; i++){
-    }
+    int i, j;
+    for(i = 0; json_buf[i] != '{'; i++){}
     *start = i;
-    for(j = i; json_buf[j] != '}'; j++){
-    }
+    for(j = i; json_buf[j] != '}'; j++){}
     *end = j;
     return 0;
 }
