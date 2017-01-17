@@ -155,7 +155,6 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
         /* If no more data, than exit the loop */
         if(size <= 0)
         {
-            printf("\n\n");
             break;
         }
         buf[size] = 0;
@@ -177,6 +176,8 @@ int main(){
     char response_buf[2048];
     char code_buf[100];
     char json_buf[2048];
+    cJSON *json; 
+    const char *code;
 
     int start;
     int end;
@@ -190,6 +191,9 @@ int main(){
     read_code_from_microsoft(resource_id, client_id, tenant, response_buf);
     find_json_bounds(response_buf, &start, &end);
     fill_json_buffer(json_buf, response_buf, &start, &end);
-    printf("\n%s\n", json_buf);   
+    json = cJSON_Parse(json_buf);
+    code = cJSON_GetObjectItem(json, "user_code")->valuestring;
+    printf("%s\n", code);
+
     return 0;
 }
