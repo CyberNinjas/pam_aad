@@ -97,7 +97,6 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
       return username;
 }
 
-
 /*
  * Function: *request_code
  *-------------------------
@@ -112,13 +111,31 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
  *
 */
 
+static int *request_token(char *code, const char *resource_id, const char *client_id, char *token_buf){
+    request_azure_oauth_token(code, resource_id, client_id, token_buf);
+    return 0;
+}
+
+/*
+ * Function: *request_code
+ *-------------------------
+ * resource_id: char array containing MS resource id
+ *
+ * client_id: contains client id of application as registered with Azure. 
+ * 
+ * tenant: the MS tenant. 
+ *
+ * returns: 0 if the function completes successfully.
+ *
+*/
+
 static int *request_code(char *code_buf, const char *resource_id, const char *client_id, const char *tenant){
     request_azure_signin_code(code_buf, resource_id, client_id, tenant);
     return 0;
 }
 
 static char *request_pass(pam_handle_t *pamh, int echocode, const char *resource_id, const char *client_id, const char *tenant){
-  char prompt[100], code[100], code_buf[100];
+  char prompt[100], code[100], code_buf[100], token_buf[1000];
   strcpy(prompt, CODE_PROMPT);
   request_code(code_buf, resource_id, client_id, tenant);
   strcpy(code, code_buf);
@@ -130,6 +147,9 @@ static char *request_pass(pam_handle_t *pamh, int echocode, const char *resource
   PAM_CONST struct pam_message *msgs = &msg;
   struct pam_response *resp = NULL;
   int retval = converse(pamh, 1, &msgs, &resp);
+  log_message(LOG_INFO, pamh, "debug: about to request_token");
+  request_token(code, resource_id, client_id, token_buf);
+  log_message(LOG_INFO, pamh, "debug: token is now: %s", token_buf);
   char *ret = NULL;
   if (retval != PAM_SUCCESS || resp == NULL || resp->resp == NULL || 
     *resp->resp == '\000'){
