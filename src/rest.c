@@ -10,6 +10,35 @@
 #define HOST "login.microsoftonline.com"
 #define PORT "443"
 
+/*
+ * Function: fill_json_buffer
+ * --------------------------
+ * *json_buf: char array that will hold the json message contained in raw_response
+ * 
+ * *raw_response: char array that holds the original raw http response from microsoft. 
+ * 
+ * *start holds the index of the '{' 
+ *
+ * *end holds the index of '}'
+ *
+*/
+
+int fill_json_buffer(char *json_buf, char *raw_response, int *start, int *end){
+    memcpy(json_buf, &raw_response[*start], *end - *start + 1);
+    json_buf[*end + 1] = '\0'; 
+    return 0;
+}
+
+/*
+ * Function: get_client_id
+ *------------------------
+ * client_id: an empty buffer that will be filled with the client ID.
+ *
+ * returns a 0, which indicates the function completed correctly. This function is simple
+ * so it is assumed there is no alternative return. 
+ *
+*/
+
 int get_client_id(char *client_id){
     srand(time(NULL));
     int random = rand();
@@ -34,14 +63,10 @@ int find_json_bounds(char *json_buf, int *start, int *end){
     int j;
     for(i = 0; json_buf[i] != '{'; i++){
     }
-    printf("first assignment\n");
     *start = i;
-    printf("after first assignment\n");
     for(j = i; json_buf[j] != '}'; j++){
     }
     *end = j;
-    printf("\nthe start is %d\n", *start);
-    printf("\nthe end is %d\n", *end);
     return 0;
 }
 
@@ -151,6 +176,7 @@ int main(){
     const char *tenant;
     char response_buf[2048];
     char code_buf[100];
+    char json_buf[2048];
 
     int start;
     int end;
@@ -163,8 +189,7 @@ int main(){
 
     read_code_from_microsoft(resource_id, client_id, tenant, response_buf);
     find_json_bounds(response_buf, &start, &end);
-    printf("\nthe start is %d\n", start);
-    printf("\nthe end is %d\n", end);
-    
+    fill_json_buffer(json_buf, response_buf, &start, &end);
+    printf("\n%s\n", json_buf);   
     return 0;
 }
