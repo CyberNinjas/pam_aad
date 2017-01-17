@@ -96,14 +96,22 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
 }
 
 
-/* 
- * To request code, must:
- * 1. Parse INI file to get information needed for the URL. 
- * 2. Make HTTPs call to azure endpoint 
- * 3. Parse response for code. 
- */
+/*
+ * Function: *request_code
+ *-------------------------
+ * resource_id: char array containing MS resource id
+ *
+ * client_id: contains client id of application as registered with Azure. 
+ * 
+ * tenant: the MS tenant. 
+ *
+ * returns: character representing the current code the user must enter 
+ * to authenticate with AAD. 
+ *
+*/
+
 static char *request_code(const char *resource_id, const char *client_id, const char *tenant){
-    return "GHSDJDFDJD";
+    return "rso;gfjsf";
 }
 
 static char *request_pass(pam_handle_t *pamh, int echocode){
