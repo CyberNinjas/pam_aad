@@ -29,19 +29,19 @@ int get_client_id(char *client_id){
  * returns an integer that indicates that the function successfully completed. 
  */ 
 
-int find_json_bounds(char *json_buf, int &start, int &end){
+int find_json_bounds(char *json_buf, int *start, int *end){
     int i;
     int j;
     for(i = 0; json_buf[i] != '{'; i++){
     }
     printf("first assignment\n");
-    start = i;
+    *start = i;
     printf("after first assignment\n");
     for(j = i; json_buf[j] != '}'; j++){
     }
-    end = j;
-    printf("\nthe start is %d\n", start);
-    printf("\nthe end is %d\n", end);
+    *end = j;
+    printf("\nthe start is %d\n", *start);
+    printf("\nthe end is %d\n", *end);
     return 0;
 }
 
@@ -162,7 +162,7 @@ int main(){
     tenant = "digipirates.onmicrosoft.com";
 
     read_code_from_microsoft(resource_id, client_id, tenant, response_buf);
-    find_json_bounds(response_buf, start, end);
+    find_json_bounds(response_buf, &start, &end);
     printf("\nthe start is %d\n", start);
     printf("\nthe end is %d\n", end);
     
