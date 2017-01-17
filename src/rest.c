@@ -345,27 +345,25 @@ int request_azure_signin_code(char *code, const char *resource_id, const char *c
     return EXIT_SUCCESS;
 }
 /* purely for testing, takes no command line args */
-int main(){
+int main(int argc, char *argv[]){
     /* initialize variables */
     const char *resource_id;
     const char *client_id;
-    const char *tenant;
+
     char response_buf[2048];
     char code_buf[100];
     char json_buf[2048];
     cJSON *json; 
     const char *code;
 
-    int start;
-    int end;
+    int start, end;
 
-    char client_id_buf[15];
     /* Provide hardcoded values for testing */
     resource_id = "00000002-0000-0000-c000-000000000000";
     client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
     tenant = "digipirates.onmicrosoft.com";
-
-    read_code_from_microsoft(resource_id, client_id, tenant, response_buf);
+    strcpy(code, argv[1]);
+    read_code_from_microsoft(code, resource_id, client_id response_buf);
     find_json_bounds(response_buf, &start, &end);
     fill_json_buffer(json_buf, response_buf, &start, &end);
     json = cJSON_Parse(json_buf);
