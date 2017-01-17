@@ -164,6 +164,41 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
     return 0;
 }
 
+/*
+ * Function: request_azure_signin_code
+ *-----------------------------------
+ * *code:
+ *
+ * *resource_id:
+ *
+ * *clientid:
+ *
+ * *tenant:
+ *
+ * returns EXIT_FAILURE if the code buffer is empty at the end of the function
+ * and EXIT_SUCCESS if the code buffer is anything but empty. 
+ * 
+ * TODO: Improve checking if this function succeeded. Should be some more error 
+ * handling and there will need to be some way to log failures. 
+*/
+int request_azure_signin_code(char *code, const char *resource_id, const char *client_id, const char *tenant){
+    char response_buf[2048];
+    char code_buf[100];
+    char json_buf[2048];
+    cJSON *json;
+    int start, end;
+
+    read_code_from_microsoft(resource_id, client_id, tenant, response_buf);
+    find_json_bounds(response_buf, &start, &end);
+    fill_json_buffer(json_buf, response_buf, &start, &end);
+    json = cJSON_Parse(json_buf);
+    code = cJSON_GetObjectItem(json, "user_code")->valuestring;
+    if (code[0] == '\0'){
+        /* string is empty, we have failed somewhere */
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
+}
 /* purely for testing, takes no command line args */
 int main(){
     /* initialize variables */
