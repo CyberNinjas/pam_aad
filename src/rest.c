@@ -167,13 +167,13 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
 /*
  * Function: request_azure_signin_code
  *-----------------------------------
- * *code:
+ * *code: character buffer that will have the code inside of it by the function's end.
  *
- * *resource_id:
+ * *resource_id: char array containing MS resource id
  *
- * *clientid:
+ * *clientid: contains client id of application as registered with Azure.
  *
- * *tenant:
+ * *tenant: the MS tenant. 
  *
  * returns EXIT_FAILURE if the code buffer is empty at the end of the function
  * and EXIT_SUCCESS if the code buffer is anything but empty. 
