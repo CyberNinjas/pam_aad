@@ -192,7 +192,7 @@ int request_azure_signin_code(char *code, const char *resource_id, const char *c
     find_json_bounds(response_buf, &start, &end);
     fill_json_buffer(json_buf, response_buf, &start, &end);
     json = cJSON_Parse(json_buf);
-    code = cJSON_GetObjectItem(json, "user_code")->valuestring;
+    strcpy(code, cJSON_GetObjectItem(json, "user_code")->valuestring);
     if (code[0] == '\0'){
         /* string is empty, we have failed somewhere */
         return EXIT_FAILURE;
