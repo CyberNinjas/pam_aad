@@ -123,6 +123,7 @@ static char *request_pass(pam_handle_t *pamh, int echocode, const char *resource
   strcpy(prompt, CODE_PROMPT);
   strcpy(code, request_code(resource_id, client_id, tenant));
   strcat(prompt, code);
+  strcat(prompt, ". Hit enter after you have logged in.");
   PAM_CONST char *message = prompt;
   PAM_CONST struct pam_message msg = { .msg_style = echocode,
                                         .msg = message };
