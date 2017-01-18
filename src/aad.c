@@ -111,8 +111,8 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
  *
 */
 
-static int *request_token(char *code, const char *resource_id, const char *client_id, char *token_buf){
-    request_azure_oauth_token(code, resource_id, client_id, token_buf);
+static int *request_token(char *user_code, const char *resource_id, const char *client_id, char *token_buf){
+    request_azure_oauth_token(user_code, resource_id, client_id, token_buf);
     return 0;
 }
 
@@ -129,15 +129,15 @@ static int *request_token(char *code, const char *resource_id, const char *clien
  *
 */
 
-static int *request_code(char *code_buf, const char *resource_id, const char *client_id, const char *tenant){
-    request_azure_signin_code(code_buf, resource_id, client_id, tenant);
+static int *request_code(char *code_buf, const char *resource_id, const char *client_id, const char *tenant, char *device_code){
+    request_azure_signin_code(code_buf, resource_id, client_id, tenant, device_code);
     return 0;
 }
 
 static char *request_pass(pam_handle_t *pamh, int echocode, const char *resource_id, const char *client_id, const char *tenant){
-  char prompt[100], code[100], code_buf[100], token_buf[1000];
+  char prompt[100], code[100], code_buf[100], token_buf[1000], device_code[1000];
   strcpy(prompt, CODE_PROMPT);
-  request_code(code_buf, resource_id, client_id, tenant);
+  request_code(code_buf, resource_id, client_id, tenant, device_code);
   strcpy(code, code_buf);
   strcat(prompt, code);
   strcat(prompt, "\nPlease hit enter after you have logged in.");
@@ -148,8 +148,9 @@ static char *request_pass(pam_handle_t *pamh, int echocode, const char *resource
   struct pam_response *resp = NULL;
   int retval = converse(pamh, 1, &msgs, &resp);
   log_message(LOG_INFO, pamh, "debug: about to request_token");
-  request_token(code, resource_id, client_id, token_buf);
-  log_message(LOG_INFO, pamh, "debug: token is now: %s", token_buf);
+  log_message(LOG_INFO, pamh, "debug: the value of %s", device_code);
+  request_token(device_code, resource_id, client_id, token_buf);
+  log_message(LOG_INFO, pamh, "debug:requested the token");
   char *ret = NULL;
   if (retval != PAM_SUCCESS || resp == NULL || resp->resp == NULL || 
     *resp->resp == '\000'){
