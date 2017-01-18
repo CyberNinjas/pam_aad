@@ -148,5 +148,11 @@ int main(){
     for(i = 0; i < num_tokens; i++){
         printf("string #%d: %s\n", i, arr[i]);
     }
+
+    int bytes_to_decode = strlen(arr[0]);
+    
+    char *base64_decoded = base64decode(arr[0], bytes_to_decode);
+
+    printf("base64 decoded string is %s\n", base64_decoded);
     return 0;
 }
