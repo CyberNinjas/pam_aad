@@ -160,15 +160,17 @@ int request_azure_oauth_token(char *code, const char *resource_id, const char *c
     poll_microsoft_for_token(code, resource_id, client_id, response_buf);
     find_json_bounds(response_buf, &start, &end);
     fill_json_buffer(json_buf, response_buf, &start, &end);
+    printf("The json buffer is...%s\n", json_buf);
     json = cJSON_Parse(json_buf);
     cJSON *access = cJSON_GetObjectItem(json, "access_token");
     if (access == NULL){
         /* Something failed. */
+        printf("Something failed.\n");
+        strcpy(token_buf, "FAILURE");
         return 1;
    }
-   token_buf = cJSON_GetObjectItem(json, "access_token")->valuestring;
-    /* the token was successfully parsed */
-    strcpy(token_buf, access_token);
+   printf("Has an access token!\n");
+   strcpy(token_buf, cJSON_GetObjectItem(json, "access_token")->valuestring);
     return 0;
 }
 
@@ -376,6 +378,7 @@ int main(int argc, char *argv[]){
     cJSON *json; 
     char user_code[20];
     char device_code[100];
+    int resp;
 
     /* Provide hardcoded values for testing */
     resource_id = "00000002-0000-0000-c000-000000000000";
@@ -384,7 +387,11 @@ int main(int argc, char *argv[]){
 
     request_azure_signin_code(user_code, resource_id, client_id, tenant, device_code);
     int start, end;
-    request_azure_oauth_token(device_code, resource_id, client_id, response_buf);
+    resp = request_azure_oauth_token(device_code, resource_id, client_id, response_buf);
+    if (resp == 1){
+        printf("\nfailure...\n");
+        return 1;
+    }
     printf("response buffer is... %s\n", response_buf);
     return 0;
 }
