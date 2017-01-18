@@ -149,10 +149,14 @@ int main(){
         printf("string #%d: %s\n", i, arr[i]);
     }
 
-    int bytes_to_decode = strlen(arr[0]);
-    
-    char *base64_decoded = base64decode(arr[0], bytes_to_decode);
+    int bytes_to_decode_1 = strlen(arr[0]);
+    int bytes_to_decode_2 = strlen(arr[1]);
+    int bytes_to_decode_3 = strlen(arr[2]);
 
-    printf("base64 decoded string is %s\n", base64_decoded);
+    char *base64_decoded1 = base64decode(arr[0], bytes_to_decode_1);
+    char *base64_decoded2 = base64decode(arr[1], bytes_to_decode_2);
+
+    printf("base64 decoded string is %s\n", base64_decoded1);
+    printf("base64 decoded string is %s\n\n", base64_decoded2);
     return 0;
 }
