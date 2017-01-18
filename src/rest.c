@@ -72,18 +72,19 @@ int poll_microsoft_for_token(char *code, const char *resource_id, const char *cl
 
     strcpy(post_buf, "resource=");
     strcat(post_buf, resource_id);
+    strcat(post_buf, "&code=");
+    strcat(post_buf, code);
     strcat(post_buf, "&client_id=");
     strcat(post_buf, client_id);
-    strcat(post_buf, "&grant_type=device_code&code=");
-    strcat(post_buf, code);
+    strcat(post_buf, "&grant_type=device_code");
 
     /* Data to create a HTTP request */
     strcpy(write_buf, "POST /");
-    strcat(write_buf, "/common/oauth2/token/ HTTP/1.1\r\n");
+    strcat(write_buf, "common/oauth2/token/ HTTP/1.1\r\n");
     strcat(write_buf, "Host: " HOST "\r\n");
     strcat(write_buf, "Connection: close \r\n");
     strcat(write_buf, "User-Agent: azure_authenticator_pam/1.0 \r\n");
-    strcat(write_buf, "Content-Length: 100\r\n");
+    strcat(write_buf, "Content-Length: 307\r\n");
     strcat(write_buf, "\r\n");
     strcat(write_buf, post_buf);
     strcat(write_buf, "\r\n");
@@ -130,7 +131,23 @@ int poll_microsoft_for_token(char *code, const char *resource_id, const char *cl
  * *client_id: char array containing the client id 
  *
  *
- * token_buf:  empty buffer to include the authentication token in
+ * token_buf:  empty buffer     char response_buf[2048];
+    char code_buf[100];
+    char json_buf[2048];
+    cJSON *json;
+    char *check;
+    int start, end;
+
+    read_code_from_microsoft(resource_id, client_id, tenant, response_buf);
+    find_json_bounds(response_buf, &start, &end);
+    fill_json_buffer(json_buf, response_buf, &start, &end);
+    json = cJSON_Parse(json_buf);
+    check = cJSON_GetObjectItem(json, "user_code")->valuestring;
+    if (check == NULL){
+        return EXIT_FAILURE;
+    }
+    strcpy(code, check);
+    return EXIT_SUCCESS;to include the authentication token in
  *
  * returns a 0 if the function completes successfully, and 0 otherwise.
  */
@@ -140,16 +157,16 @@ int request_azure_oauth_token(char *code, const char *resource_id, const char *c
     char json_buf[2048];
     cJSON *json; 
     char *access_token;
-    
     poll_microsoft_for_token(code, resource_id, client_id, response_buf);
     find_json_bounds(response_buf, &start, &end);
     fill_json_buffer(json_buf, response_buf, &start, &end);
     json = cJSON_Parse(json_buf);
-    access_token = cJSON_GetObjectItem(json, "access_token")->valuestring;
-    if (access_token == NULL){
-        /* Something failed */; 
+    cJSON *access = cJSON_GetObjectItem(json, "access_token");
+    if (access == NULL){
+        /* Something failed. */
         return 1;
-    }
+   }
+   token_buf = cJSON_GetObjectItem(json, "access_token")->valuestring;
     /* the token was successfully parsed */
     strcpy(token_buf, access_token);
     return 0;
@@ -218,11 +235,11 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
     /* SSL* ssl; */
     SSL_CTX* ctx;
     
-    char post_buf[1024];
+    char post_buf[2048];
 
     /* Variables used to read the response from the server */
     int size;
-    char buf[1024];
+    char buf[2048];
 
     char write_buf[2048];
 
@@ -257,7 +274,7 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
     else{
         printf("Connected\n");
     }
-    strcpy(post_buf, "text");
+    strcpy(post_buf, "resource=");
     strcat(post_buf, resource_id);
     strcat(post_buf, "&client_id=");
     strcat(post_buf, client_id);
@@ -276,6 +293,7 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
     strcat(write_buf, "\r\n");
     strcat(write_buf, post_buf);
     strcat(write_buf, "\r\n");
+    printf("going to send %s\n", write_buf);
 
     /* Attempts to write len bytes from buf to BIO */ 
     if (BIO_write(bio, write_buf, strlen(write_buf)) <= 0)
@@ -326,7 +344,7 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
  * TODO: Improve checking if this function succeeded. Should be some more error 
  * handling and there will need to be some way to log failures. 
 */
-int request_azure_signin_code(char *code, const char *resource_id, const char *client_id, const char *tenant){
+int request_azure_signin_code(char *user_code, const char *resource_id, const char *client_id, const char *tenant, char *device_code){
     char response_buf[2048];
     char code_buf[100];
     char json_buf[2048];
@@ -337,32 +355,36 @@ int request_azure_signin_code(char *code, const char *resource_id, const char *c
     find_json_bounds(response_buf, &start, &end);
     fill_json_buffer(json_buf, response_buf, &start, &end);
     json = cJSON_Parse(json_buf);
-    strcpy(code, cJSON_GetObjectItem(json, "user_code")->valuestring);
-    if (code[0] == '\0'){
+    strcpy(user_code, cJSON_GetObjectItem(json, "user_code")->valuestring);
+    strcpy(device_code, cJSON_GetObjectItem(json, "device_code")->valuestring);
+    if (user_code[0] == '\0' || device_code[0] == '\0'){
         /* string is empty, we have failed somewhere */
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
 }
+
 /* purely for testing, takes no command line args */
 int main(int argc, char *argv[]){
     /* initialize variables */
-    printf("%d\n", argc);
     const char *resource_id;
     const char *client_id;
-
+    const char *tenant; 
     char response_buf[2048];
     char code_buf[100];
     char json_buf[2048];
     cJSON *json; 
-    char *code;
+    char user_code[20];
+    char device_code[100];
 
-    int start, end;
     /* Provide hardcoded values for testing */
     resource_id = "00000002-0000-0000-c000-000000000000";
     client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
-    strcpy(code, argv[2]);
-    printf("past that bit\n");
-    request_azure_oauth_token(code, resource_id, client_id, response_buf);
+    tenant = "digipirates.onmicrosoft.com";
+
+    request_azure_signin_code(user_code, resource_id, client_id, tenant, device_code);
+    int start, end;
+    request_azure_oauth_token(device_code, resource_id, client_id, response_buf);
+    printf("response buffer is... %s\n", response_buf);
     return 0;
 }
