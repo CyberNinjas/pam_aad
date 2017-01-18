@@ -153,8 +153,8 @@ int poll_microsoft_for_token(char *code, const char *resource_id, const char *cl
  */
 int request_azure_oauth_token(char *code, const char *resource_id, const char *client_id, char *token_buf){
     int start, end;
-    char response_buf[2048];
-    char json_buf[2048];
+    char response_buf[8000];
+    char json_buf[8000];
     cJSON *json; 
     char *access_token;
     poll_microsoft_for_token(code, resource_id, client_id, response_buf);
@@ -372,12 +372,12 @@ int main(int argc, char *argv[]){
     const char *resource_id;
     const char *client_id;
     const char *tenant; 
-    char response_buf[2048];
+    char response_buf[16000];
     char code_buf[100];
-    char json_buf[2048];
+    char json_buf[16000];
     cJSON *json; 
     char user_code[20];
-    char device_code[100];
+    char device_code[1000];
     int resp;
 
     /* Provide hardcoded values for testing */
@@ -387,9 +387,15 @@ int main(int argc, char *argv[]){
 
     request_azure_signin_code(user_code, resource_id, client_id, tenant, device_code);
     int start, end;
+    printf("user code is %s\n", user_code);
+    printf("device code is %s\n", device_code);
+    char key[1];
+    puts("Press any key to continue...");
+    getchar();
     resp = request_azure_oauth_token(device_code, resource_id, client_id, response_buf);
     if (resp == 1){
         printf("\nfailure...\n");
+        printf("response buffer is %s\n", response_buf);
         return 1;
     }
     printf("response buffer is... %s\n", response_buf);
