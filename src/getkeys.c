@@ -113,6 +113,11 @@ int fill_json_buffer(char *json_buf, char *raw_response, int *start, int *end){
     return 0;
 }
 
+int jwk_to_pem_rsa(cJSON jwk){
+
+
+}
+
 /*
  *
  * Function: find_json_bounds
