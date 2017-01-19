@@ -130,25 +130,6 @@ int poll_microsoft_for_token(char *code, const char *resource_id, const char *cl
  *
  * *client_id: char array containing the client id 
  *
- *
- * token_buf:  empty buffer     char response_buf[2048];
-    char code_buf[100];
-    char json_buf[2048];
-    cJSON *json;
-    char *check;
-    int start, end;
-
-    read_code_from_microsoft(resource_id, client_id, tenant, response_buf);
-    find_json_bounds(response_buf, &start, &end);
-    fill_json_buffer(json_buf, response_buf, &start, &end);
-    json = cJSON_Parse(json_buf);
-    check = cJSON_GetObjectItem(json, "user_code")->valuestring;
-    if (check == NULL){
-        return EXIT_FAILURE;
-    }
-    strcpy(code, check);
-    return EXIT_SUCCESS;to include the authentication token in
- *
  * returns a 0 if the function completes successfully, and 0 otherwise.
  */
 int request_azure_oauth_token(char *code, const char *resource_id, const char *client_id, char *token_buf){
