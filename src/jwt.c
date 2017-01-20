@@ -10,6 +10,7 @@
 #define PAYLOAD 1  
 
 struct jwt {
+    const char *token;
     cJSON *payload;
     cJSON *header;
 };
@@ -36,8 +37,18 @@ struct jwt parse_token(const char *raw_token){
 
     temp.header  = cJSON_Parse(base64_decoded1);
     temp.payload = cJSON_Parse(base64_decoded2);
+    temp.token = raw_token;
 
     return temp;
+}
+
+int verify_token(struct jwt base_jwt, const char *raw_token, const unsigned char *key){
+    int ret;
+    int key_len;
+    jwt_t **jwt;
+    key_len = strlen(key);
+    ret = jwt_decode(jwt, raw_token, key, key_len);
+    return ret;
 }
 
 int main(){
@@ -68,10 +79,12 @@ int main(){
     char *base64_decoded2 = base64decode(arr[1], bytes_to_decode_2);
 
     jwt_t **jwt;
-    jwt_t **jwt_verified;
     const unsigned char *key = "-----BEGIN RSA PUBLIC KEY-----MIIBCgKCAQEAp3pKrlon/NgHwBtalBY2f7Nydp2Fwxh7MW8+bzk0fhVCiFOb4UyjcggmXokBI9IrXeb16veOA9dm4OR2sQMewX5AwS+qZ99LbAeHe0rNqzDhTSNFNgHQdIJuafD0elSe/9QnRf9q2E7YZGYv4oDZ5IaZvj7mg5AJD6ptpFeJz9GQA4sjDXPreRGd4vB25AywU0nwVltaRAWPdO0XlIvXc/az/Q+eurAYPn3NxsO72gc61yK7SH75iEXkJZ1YQiBp9xmT2b7x5jXYEpqa890GfJ+nPoZVN6clB7Yz4AbPlFI2yG8j3vpVRsGJoh43O/Nob3WbraQVYtGoTeKCroPTYQIDAQAB-----END RSA PUBLIC KEY-----";
     int key_len = strlen(key);
     int ret = jwt_decode(jwt, raw_token, key, key_len);
     printf("ret value is %d\n", ret);
+    struct jwt oldjwt = parse_token(raw_token);
+    int wow = verify_token(oldjwt, oldjwt.token, "");
+    printf("the ret value is %d\n", wow);
     return 0;
 }
