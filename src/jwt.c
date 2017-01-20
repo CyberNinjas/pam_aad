@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <openssl/pem.h>
 #include <string.h> //Only needed for strlen().
+#include <jwt.h>
+
 #include "cJSON.h"
 #include "utils.h"
 
@@ -53,21 +55,23 @@ int main(){
     num_tokens = split(url_token, '.', &arr);
     if (num_tokens != 3){
         printf("jwt was malformed, erroring out.\n");
+        return 1;
     }
-    printf("Found %d tokens.\n", num_tokens);
 
     for(i = 0; i < num_tokens; i++){
-        printf("string #%d: %s\n", i, arr[i]);
     }
 
     int bytes_to_decode_1 = strlen(arr[0]);
     int bytes_to_decode_2 = strlen(arr[1]);
-    int bytes_to_decode_3 = strlen(arr[2]);
 
     char *base64_decoded1 = base64decode(arr[0], bytes_to_decode_1);
     char *base64_decoded2 = base64decode(arr[1], bytes_to_decode_2);
 
-    struct jwt test = parse_token(raw_token);
-    printf("\npulling out header value, ALG: %s\n", cJSON_GetObjectItem(test.header, "alg")->valuestring);
+    jwt_t **jwt;
+    jwt_t **jwt_verified;
+    const unsigned char *key = "-----BEGIN RSA PUBLIC KEY-----MIIBCgKCAQEAp3pKrlon/NgHwBtalBY2f7Nydp2Fwxh7MW8+bzk0fhVCiFOb4UyjcggmXokBI9IrXeb16veOA9dm4OR2sQMewX5AwS+qZ99LbAeHe0rNqzDhTSNFNgHQdIJuafD0elSe/9QnRf9q2E7YZGYv4oDZ5IaZvj7mg5AJD6ptpFeJz9GQA4sjDXPreRGd4vB25AywU0nwVltaRAWPdO0XlIvXc/az/Q+eurAYPn3NxsO72gc61yK7SH75iEXkJZ1YQiBp9xmT2b7x5jXYEpqa890GfJ+nPoZVN6clB7Yz4AbPlFI2yG8j3vpVRsGJoh43O/Nob3WbraQVYtGoTeKCroPTYQIDAQAB-----END RSA PUBLIC KEY-----";
+    int key_len = strlen(key);
+    int ret = jwt_decode(jwt, raw_token, key, key_len);
+    printf("ret value is %d\n", ret);
     return 0;
 }
