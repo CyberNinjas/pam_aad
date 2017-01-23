@@ -13,6 +13,7 @@ struct jwt {
     const char *token;
     cJSON *payload;
     cJSON *header;
+    const char *user;
 };
 
 struct jwt parse_token(const char *raw_token){
@@ -32,14 +33,34 @@ struct jwt parse_token(const char *raw_token){
 
     char *base64_decoded1 = base64decode(arr[HEADER], num_header_bytes);
     char *base64_decoded2 = base64decode(arr[PAYLOAD], num_payload_bytes);
-
-    printf("This is the header: %s\n", base64_decoded1);
-
+    strcat(base64_decoded2, "\"}");
     temp.header  = cJSON_Parse(base64_decoded1);
     temp.payload = cJSON_Parse(base64_decoded2);
     temp.token = raw_token;
-
+    cJSON *user = cJSON_GetObjectItem(temp.payload, "upn");
+    if (user == NULL){
+        printf("no upn?\n");
+        return temp;
+    }
+    temp.user  = cJSON_GetObjectItem(temp.payload, "upn")->valuestring;
+    printf("parsed \n");
     return temp;
+}
+
+int jwt_username_matches(const char* raw_token, char* claimed_username){
+    char *user;
+    struct jwt token = parse_token(raw_token);
+    printf("value 1 is %s\n", token.user);
+    printf("value 2 is %s\n", claimed_username);
+    return strcmp(token.user, claimed_username);
+}
+
+int azure_token_validate(char *raw_token){
+    int ret;
+    const unsigned char *key = load_file("key.pem");
+    struct jwt token = parse_token(raw_token);
+    ret = verify_token(token, token.token,"");
+    return ret;
 }
 
 int verify_token(struct jwt base_jwt, const char *raw_token, const unsigned char *key){
@@ -84,7 +105,13 @@ int main(){
     int ret = jwt_decode(jwt, raw_token, key, key_len);
     printf("ret value is %d\n", ret);
     struct jwt oldjwt = parse_token(raw_token);
-    int wow = verify_token(oldjwt, oldjwt.token, key);
+    int wow = verify_token(oldjwt, oldjwt.token, "");
     printf("the ret value is %d\n", wow);
+    int ok = jwt_username_matches(raw_token, "captain@digipirates.onmicrosoft.com");
+    if (ok == 0){
+        printf("\nwoooOoo!\n!");
+    }else{
+        printf("oh noooooo!\n");
+    }
     return 0;
 }

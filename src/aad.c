@@ -97,6 +97,9 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
       return username;
 }
 
+int azure_token_user_match(const char *claimed_username, const char *token){
+    return jwt_username_matches(token, claimed_username);
+}
 /*
  * Function: *request_code
  *-------------------------
@@ -111,7 +114,7 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
  *
 */
 
-static int *request_token(char *user_code, const char *resource_id, const char *client_id, char *token_buf){
+static int *request_token(char *user_code, const char *resource_id, const char *client_id, const char *token_buf){
     request_azure_oauth_token(user_code, resource_id, client_id, token_buf);
     return 0;
 }
@@ -134,8 +137,8 @@ static int *request_code(char *code_buf, const char *resource_id, const char *cl
     return 0;
 }
 
-static char *request_pass(pam_handle_t *pamh, int echocode, const char *resource_id, const char *client_id, const char *tenant){
-  char prompt[100], code[100], code_buf[100], token_buf[1000], device_code[1000];
+static char *request_azure_auth(pam_handle_t *pamh, int echocode, const char *resource_id, const char *client_id, const char *tenant, const char *token_buf){
+  char prompt[100], code[100], code_buf[100], device_code[1000];
   strcpy(prompt, CODE_PROMPT);
   request_code(code_buf, resource_id, client_id, tenant, device_code);
   strcpy(code, code_buf);
@@ -150,6 +153,11 @@ static char *request_pass(pam_handle_t *pamh, int echocode, const char *resource
   log_message(LOG_INFO, pamh, "debug: about to request_token");
   log_message(LOG_INFO, pamh, "debug: the value of %s", device_code);
   request_token(device_code, resource_id, client_id, token_buf);
+  log_message(LOG_INFO, pamh, "now attempting validation of token...");
+  if(azure_token_validate(token_buf) == 0){
+      log_message(LOG_INFO, pamh, "debug: TOKEN HAS BEEN VALIDATED");
+  }
+      //the token is solid and validated
   log_message(LOG_INFO, pamh, "debug:requested the token");
   char *ret = NULL;
   if (retval != PAM_SUCCESS || resp == NULL || resp->resp == NULL || 
@@ -195,7 +203,10 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
 
   int rc = PAM_AUTH_ERR;
   const char *username;
-  const char *pw;
+  const char *auth;
+  int valid_token;
+  char token_buf[10000];
+  int ret;
 
   Params params = { 0 };
   params.allowed_perm = 0600;
@@ -208,8 +219,14 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
 
   username = get_user_name(pamh, &params);
   log_message(LOG_INFO, pamh, "debug: Collected username for user %s", username);
-  pw = request_pass(pamh, params.echocode, params.resource_id, params.client_id, params.tenant);
-  return PAM_SUCCESS;
+  auth = request_azure_auth(pamh, params.echocode, params.resource_id, params.client_id, params.tenant, token_buf);
+  valid_token = azure_token_validate(token_buf);
+  log_message(LOG_INFO, pamh, "finished validating token...");
+  if (valid_token == 0 && azure_token_user_match(username, token_buf) == 0){
+          rc = PAM_SUCCESS;
+  }
+  log_message(LOG_INFO, pamh, "debug: the value of valid token is %d", valid_token);
+return rc;
 }
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags,
