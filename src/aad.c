@@ -156,9 +156,9 @@ static char *request_azure_auth(pam_handle_t *pamh, int echocode, const char *re
   log_message(LOG_INFO, pamh, "now attempting validation of token...");
   if(azure_token_validate(token_buf) == 0){
       log_message(LOG_INFO, pamh, "debug: TOKEN HAS BEEN VALIDATED");
+      return PAM_SUCCESS;
   }
       //the token is solid and validated
-  log_message(LOG_INFO, pamh, "debug:requested the token");
   char *ret = NULL;
   if (retval != PAM_SUCCESS || resp == NULL || resp->resp == NULL || 
     *resp->resp == '\000'){
