@@ -48,11 +48,12 @@ struct jwt parse_token(const char *raw_token){
 }
 
 int jwt_username_matches(const char* raw_token, char* claimed_username){
-    char *user;
+    char user[200];
+    int claimed_length = strlen(claimed_username);
     struct jwt token = parse_token(raw_token);
-    printf("value 1 is %s\n", token.user);
-    printf("value 2 is %s\n", claimed_username);
-    return strcmp(token.user, claimed_username);
+    strncpy(user, token.user, claimed_length);
+    user[claimed_length] = '\0';
+    return strcmp(claimed_username, user);
 }
 
 int azure_token_validate(char *raw_token){
@@ -107,7 +108,7 @@ int main(){
     struct jwt oldjwt = parse_token(raw_token);
     int wow = verify_token(oldjwt, oldjwt.token, "");
     printf("the ret value is %d\n", wow);
-    int ok = jwt_username_matches(raw_token, "captain@digipirates.onmicrosoft.com");
+    int ok = jwt_username_matches(raw_token, "captain@digipirates.onmicrosoft");
     if (ok == 0){
         printf("\nwoooOoo!\n!");
     }else{
