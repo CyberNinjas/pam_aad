@@ -88,7 +88,6 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
       !username || !*username){
           log_message(LOG_ERR, pamh,
           "pam_get_user() failed to get a user name");
-
           return NULL;
       }
       if (params -> debug){
@@ -152,7 +151,8 @@ int request_azure_auth(pam_handle_t *pamh, int echocode, const char *resource_id
   int retval = converse(pamh, 1, &msgs, &resp);
   request_token(device_code, resource_id, client_id, token_buf);
   if(azure_token_validate(token_buf) == 0){
-      log_message(LOG_INFO, pamh, "debug: TOKEN HAS BEEN VALIDATED");
+      log_message(LOG_INFO, pamh, "why is this the last log?");
+      log_message(LOG_INFO, pamh, "debug: hello?");
       return 0;
   }
     return 1;
@@ -193,18 +193,13 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
   if (parse_args(pamh, argc, argv, &params) < 0){
       return rc;
   }
-  log_message(LOG_INFO, pamh, "debug: Resource id is %s", params.resource_id);
-  log_message(LOG_INFO, pamh, "debug: Client id is %s", params.client_id);
-  log_message(LOG_INFO, pamh, "debug: tenant is %s", params.tenant);
 
   username = get_user_name(pamh, &params);
   log_message(LOG_INFO, pamh, "debug: Collected username for user %s", username);
   auth = request_azure_auth(pamh, params.echocode, params.resource_id, params.client_id, params.tenant, token_buf);
-  log_message(LOG_INFO, pamh, "The current value of token_buf is...: %s", token_buf);
   if (auth == 0 && azure_token_user_match(username, token_buf) == 0){
           rc = PAM_SUCCESS;
   }
-  log_message(LOG_INFO, pamh, "debug: the value of valid token is %d", valid_token);
 return rc;
 }
 
