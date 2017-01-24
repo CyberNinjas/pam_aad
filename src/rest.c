@@ -310,6 +310,99 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
     return 0;
 }
 
+
+int get_microsoft_graph_groups(char *token, char *response_buf){
+    /* initialize variables */
+    BIO* bio;
+    /* SSL* ssl; */
+    SSL_CTX* ctx;
+    
+    char post_buf[2048];
+
+    /* Variables used to read the response from the server */
+    int size;
+    char buf[2048];
+
+    char write_buf[2048];
+
+    strcpy(response_buf, " ");
+    /* Registers the available SSL/TLS ciphers */
+    /* Starts security layer */
+
+    SSL_library_init();
+
+    /* creates a new SSL_CTX object as framework to establish TLS/SSL enabled connections */
+
+    ctx = SSL_CTX_new(SSLv23_client_method());
+
+    if (ctx == NULL)
+    {
+        printf("Ctx is null\n");
+    }
+    
+    /* Creates a new BIO chain consisting of an SSL BIO */
+
+    bio = BIO_new_ssl_connect(ctx);
+
+    /* uses the string name to set the hostname */
+
+    BIO_set_conn_hostname(bio, "graph.microsoft.com:443");
+
+    if(BIO_do_connect(bio) <= 0)
+    {
+        printf("Failed connection\n");
+        return 1;
+    }
+    else{
+        printf("Connected\n");
+    }
+
+    /* Data to create a HTTP request */
+    strcat(write_buf, "GET /v1.0/me/memberOf/$/microsoft.graph.group?$filter=groupTypes/any(a:a%20eq%20'unified')/ HTTP/1.1\r\n");
+    strcat(write_buf, "Host: graph.microsoft.com\r\n");
+    strcat(write_buf, "Connection: close \r\n");
+    strcat(write_buf, "Authorization: Bearer ");
+    strcat(write_buf, token);
+    strcat(write_buf, "\r\n");
+    strcat(write_buf, "User-Agent: azure_authenticator_pam/1.0 \r\n");
+    strcat(write_buf, "Content-Length: 100\r\n");
+    strcat(write_buf, "\r\n");
+    printf("going to send %s\n", write_buf);
+
+    /* Attempts to write len bytes from buf to BIO */ 
+    if (BIO_write(bio, write_buf, strlen(write_buf)) <= 0)
+    {
+        /* handle failed write here */ 
+        if (!BIO_should_retry(bio))
+        {
+            printf("Do retry\n");
+        }
+
+        printf("Failed write\n");
+    }
+
+    /* Read the response */
+    for (;;)
+    {
+        size = BIO_read(bio, buf, 1023);
+
+        /* If no more data, than exit the loop */
+        if(size <= 0)
+        {
+            break;
+        }
+        buf[size] = 0;
+        strcat(response_buf, buf);
+    }
+
+    BIO_free_all(bio);
+    SSL_CTX_free(ctx);
+
+    return 0;
+}
+}
+
+
 /*
  * Function: request_azure_signin_code
  *-----------------------------------
@@ -327,6 +420,7 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
  * TODO: Improve checking if this function succeeded. Should be some more error 
  * handling and there will need to be some way to log failures. 
 */
+
 int request_azure_signin_code(char *user_code, const char *resource_id, const char *client_id, const char *tenant, char *device_code){
     char response_buf[2048];
     char code_buf[100];

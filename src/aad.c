@@ -90,7 +90,7 @@ static const char *get_user_name(pam_handle_t *pamh, const Params *params){
           "pam_get_user() failed to get a user name");
           return NULL;
       }
-      if (params -> debug){
+     if (params -> debug){
           log_message(LOG_INFO, pamh, "debug: start of azure_authenticator for %s", username);
       }
       return username;
