@@ -60,7 +60,7 @@ int azure_token_validate(char *raw_token){
     int ret;
     const unsigned char *key = load_file("/home/cyberninjas/Documents/C_aad/pam_aad/src/key.pem");
     struct jwt token = parse_token(raw_token);
-    ret = verify_token(token, token.token,"");
+    ret = verify_token(token, token.token, "");
     return ret;
 }
 
@@ -81,8 +81,6 @@ int main(){
     
     url_token = str_replace(raw_token, "-", "+");
     url_token = str_replace(url_token, "_", "/");
-    
-    int i;
     int num_tokens = 0;
     char **arr = NULL;
     num_tokens = split(url_token, '.', &arr);
@@ -91,6 +89,7 @@ int main(){
         return 1;
     }
 
+    int i;
     for(i = 0; i < num_tokens; i++){
     }
 
