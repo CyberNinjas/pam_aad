@@ -42,3 +42,25 @@ This is the id of your application. Once you have create an application through 
 ### tenant
 
 Your organization. [xxxxxx].onmicrosoft.com, where [xxxxxx] is replaced by your 0365 organization name. 
+
+### Current behavior
+
+```
+login as: captain@digipirates.onmicrosoft
+Using keyboard-interactive authentication.
+Enter the following code at https://aka.ms/devicelogin : B8EYXPJQF
+Please hit enter after you have logged in.
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+```
+
+#### Issues with the above:
+
+1. Note that I still have to have the user truncate their own usernames. 
+2. It prompts the user, letting them know they're using keyboard-interactive authentication.
+3. Requires a user to hit enter, instead of just displaying the message instead of polling for a set amount of time and logging in when the token is acquired and validated. 
