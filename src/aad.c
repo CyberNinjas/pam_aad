@@ -151,8 +151,6 @@ int request_azure_auth(pam_handle_t *pamh, int echocode, const char *resource_id
   int retval = converse(pamh, 1, &msgs, &resp);
   request_token(device_code, resource_id, client_id, token_buf);
   if(azure_token_validate(token_buf) == 0){
-      log_message(LOG_INFO, pamh, "why is this the last log?");
-      log_message(LOG_INFO, pamh, "debug: hello?");
       return 0;
   }
     return 1;
@@ -180,12 +178,10 @@ return 0;
 
 static int azure_authenticator(pam_handle_t *pamh, int flags,
                                int argc, const char **argv){
-
   int rc = PAM_AUTH_ERR;
   const char *username;
-  int auth;
   int valid_token;
-  char token_buf[20000];
+  char token_buf[3000];
   int ret;
 
   Params params = { 0 };
@@ -195,8 +191,7 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
   }
 
   username = get_user_name(pamh, &params);
-  log_message(LOG_INFO, pamh, "debug: Collected username for user %s", username);
-  auth = request_azure_auth(pamh, params.echocode, params.resource_id, params.client_id, params.tenant, token_buf);
+  int auth = request_azure_auth(pamh, params.echocode, params.resource_id, params.client_id, params.tenant, token_buf);
   if (auth == 0 && azure_token_user_match(username, token_buf) == 0){
           rc = PAM_SUCCESS;
   }
