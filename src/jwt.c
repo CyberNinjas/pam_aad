@@ -58,7 +58,7 @@ int jwt_username_matches(const char* raw_token, char* claimed_username){
 
 int azure_token_validate(char *raw_token){
     int ret;
-    const unsigned char *key = load_file("key.pem");
+    const unsigned char *key = load_file("/home/cyberninjas/Documents/C_aad/pam_aad/src/key.pem");
     struct jwt token = parse_token(raw_token);
     ret = verify_token(token, token.token,"");
     return ret;
