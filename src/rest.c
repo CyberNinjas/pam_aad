@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "cJSON.h"
+#include "utils.h"
 
 #define HOST "login.microsoftonline.com"
 #define PORT "443"
@@ -134,8 +135,8 @@ int poll_microsoft_for_token(char *code, const char *resource_id, const char *cl
  */
 int request_azure_oauth_token(char *code, const char *resource_id, const char *client_id, const char *token_buf){
     int start, end;
-    char response_buf[8000];
-    char json_buf[8000];
+    char response_buf[9000];
+    char json_buf[9000];
     cJSON *json; 
     char *access_token;
     poll_microsoft_for_token(code, resource_id, client_id, response_buf);
@@ -323,9 +324,9 @@ int get_microsoft_graph_groups(char *token, char *response_buf){
     int size;
     char buf[2048];
 
-    char write_buf[20480];
+    char write_buf[204800];
 
-    strcpy(response_buf, " ");
+    strcpy(response_buf, "");
     /* Registers the available SSL/TLS ciphers */
     /* Starts security layer */
 
@@ -358,16 +359,16 @@ int get_microsoft_graph_groups(char *token, char *response_buf){
     }
 
     /* Data to create a HTTP request */
-    strcat(write_buf, "GET /v1.0/me/memberOf/$/microsoft.graph.group?$filter=groupTypes/any(a:a%20eq%20'unified')/ HTTP/1.1\r\n");
-    strcat(write_buf, "Host: graph.microsoft.com\r\n");
-    strcat(write_buf, "Connection: close \r\n");
-    strcat(write_buf, "Authorization: Bearer ");
+    strcat(write_buf, "GET /v1.0/me/ HTTP/1.1\r\n");
+    strcat(write_buf, "WWW-Authenticate: Bearer ");
     strcat(write_buf, token);
     strcat(write_buf, "\r\n");
+    strcat(write_buf, "Host: graph.microsoft.com\r\n");
     strcat(write_buf, "User-Agent: azure_authenticator_pam/1.0 \r\n");
-    strcat(write_buf, "Content-Length: 100\r\n");
+    strcat(write_buf, "Connection: close\r\n");
     strcat(write_buf, "\r\n");
-    printf("going to send %s\n", write_buf);
+
+    printf("Request we're to write is as follows:\n%s\n", write_buf);
 
     /* Attempts to write len bytes from buf to BIO */ 
     if (BIO_write(bio, write_buf, strlen(write_buf)) <= 0)
@@ -446,10 +447,10 @@ int main(int argc, char *argv[]){
     const char *resource_id;
     const char *client_id;
     const char *tenant; 
-    char response_buf[16000];
+    char response_buf[160000];
     char code_buf[100];
-    char json_buf[16000];
-    char graph_buf[10000];
+    char json_buf[160000];
+    char graph_buf[100000];
     cJSON *json; 
     char user_code[20];
     char device_code[1000];
@@ -459,7 +460,6 @@ int main(int argc, char *argv[]){
     resource_id = "00000002-0000-0000-c000-000000000000";
     client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
     tenant = "digipirates.onmicrosoft.com";
-
     request_azure_signin_code(user_code, resource_id, client_id, tenant, device_code);
     int start, end;
     printf("user code is %s\n", user_code);
@@ -473,6 +473,7 @@ int main(int argc, char *argv[]){
         printf("response buffer is %s\n", response_buf);
         return 1;
     }
+
     get_microsoft_graph_groups(response_buf, graph_buf);
     printf("The graph_response is %s\n", graph_buf);
     return 0;
