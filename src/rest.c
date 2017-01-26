@@ -359,12 +359,12 @@ int get_microsoft_graph_groups(char *token, char *response_buf){
     }
 
     /* Data to create a HTTP request */
-    strcat(write_buf, "GET /v1.0/me/ HTTP/1.1\r\n");
-    strcat(write_buf, "WWW-Authenticate: Bearer ");
+    strcat(write_buf, "GET /v1.0/me/memberOf/$/microsoft.graph.group HTTP/1.1\r\n");
+    strcat(write_buf, "Authorization: Bearer ");
     strcat(write_buf, token);
     strcat(write_buf, "\r\n");
     strcat(write_buf, "Host: graph.microsoft.com\r\n");
-    strcat(write_buf, "User-Agent: azure_authenticator_pam/1.0 \r\n");
+    strcat(write_buf, "User-Agent: azure_authenticator_pam/1.0\r\n");
     strcat(write_buf, "Connection: close\r\n");
     strcat(write_buf, "\r\n");
 
