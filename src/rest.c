@@ -359,7 +359,7 @@ int get_microsoft_graph_groups(char *token, char *response_buf){
     }
 
     /* Data to create a HTTP request */
-    strcat(write_buf, "GET /digipirates.onmicrosoft.com/users?api-version=1.6 HTTP/1.1\r\n");
+    strcat(write_buf, "GET /digipirates.onmicrosoft.com/me?api-version=1.6 HTTP/1.1\r\n");
     strcat(write_buf, "Authorization: Bearer ");
     strcat(write_buf, token);
     strcat(write_buf, "\r\n");
