@@ -208,7 +208,7 @@ int find_json_bounds(char *json_buf, int *start, int *end){
     int i, j;
     for(i = 0; json_buf[i] != '{'; i++){}
     *start = i;
-    for(j = i; json_buf[j] != '}'; j++){}
+    for(j = i; json_buf[j] != '\0'; j++){}
     *end = j;
     return 0;
 }
@@ -312,7 +312,7 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
 }
 
 
-int get_microsoft_graph_groups(char *token, char *response_buf){
+int get_microsoft_graph_userprofile(char *token, char *response_buf){
     /* initialize variables */
     BIO* bio;
     /* SSL* ssl; */
@@ -395,10 +395,34 @@ int get_microsoft_graph_groups(char *token, char *response_buf){
         buf[size] = 0;
         strcat(response_buf, buf);
     }
-
+    strcpy(response_buf, "\0");
     BIO_free_all(bio);
     SSL_CTX_free(ctx);
+    return 0;
+}
 
+int parse_user_object_id(char *response_buf, char* user_object_id_buf){
+    char json_buf[4000];    
+    int start, end;
+    cJSON *json;
+    printf("Checking response buff bounds\n");
+    printf("Response buf has... %s", response_buf);
+
+    find_json_bounds(response_buf, &start, &end);
+    
+    printf("got bounds\n");
+
+    fill_json_buffer(json_buf, response_buf, &start, &end);
+    printf("The json buffer looks like, %s\n ", json_buf);
+    json = cJSON_Parse(json_buf);
+    cJSON *object = cJSON_GetObjectItem(json, "objectId");
+    if (object == NULL){
+        /* Something failed. */
+        printf("Something failed.\n");
+        return 1;
+   }
+    strcpy(user_object_id_buf, cJSON_GetObjectItem(json, "objectId")->valuestring);
+    
     return 0;
 }
 
@@ -448,13 +472,14 @@ int main(int argc, char *argv[]){
     const char *tenant; 
     char response_buf[160000];
     char code_buf[100];
-    char json_buf[160000];
-    char graph_buf[100000];
+    char json_buf[1600000];
+    char user_object_id_buf[100];
+    char user_profile_buf[100000];
+    char user_group_buf[100000];
     cJSON *json; 
     char user_code[20];
     char device_code[1000];
     int resp;
-
     /* Provide hardcoded values for testing */
     resource_id = "00000002-0000-0000-c000-000000000000";
     client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
@@ -467,13 +492,9 @@ int main(int argc, char *argv[]){
     puts("Press any key to continue...");
     getchar();
     resp = request_azure_oauth_token(device_code, resource_id, client_id, response_buf);
-    if (resp == 1){
-        printf("\nfailure...\n");
-        printf("response buffer is %s\n", response_buf);
-        return 1;
-    }
-
-    get_microsoft_graph_groups(response_buf, graph_buf);
-    printf("The graph_response is %s\n", graph_buf);
+    get_microsoft_graph_userprofile(response_buf, user_profile_buf);
+    parse_user_object_id(user_profile_buf, user_object_id_buf);
+    printf("user object id is %s\n", user_object_id_buf);
+    //With the user's objectID, we should be able to get the '
     return 0;
 }
