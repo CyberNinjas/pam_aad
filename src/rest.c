@@ -263,8 +263,8 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
     strcat(post_buf, "&client_id=");
     strcat(post_buf, client_id);
     strcat(post_buf, "&client_request_id=");
-    /* TODO: Change the below for a legitimate client request id, randomly generated */
     strcat(post_buf, "5929459294929");
+    strcat(post_buf,"&scope=profile");
 
     /* Data to create a HTTP request */
     strcpy(write_buf, "POST /");
@@ -347,7 +347,7 @@ int get_microsoft_graph_groups(char *token, char *response_buf){
 
     /* uses the string name to set the hostname */
 
-    BIO_set_conn_hostname(bio, "graph.microsoft.com:443");
+    BIO_set_conn_hostname(bio, "graph.windows.net:443");
 
     if(BIO_do_connect(bio) <= 0)
     {
@@ -359,11 +359,11 @@ int get_microsoft_graph_groups(char *token, char *response_buf){
     }
 
     /* Data to create a HTTP request */
-    strcat(write_buf, "GET /v1.0/me/memberOf/$/microsoft.graph.group HTTP/1.1\r\n");
+    strcat(write_buf, "GET /digipirates.onmicrosoft.com/users?api-version=1.6 HTTP/1.1\r\n");
     strcat(write_buf, "Authorization: Bearer ");
     strcat(write_buf, token);
     strcat(write_buf, "\r\n");
-    strcat(write_buf, "Host: graph.microsoft.com\r\n");
+    strcat(write_buf, "Host: graph.windows.net\r\n");
     strcat(write_buf, "User-Agent: azure_authenticator_pam/1.0\r\n");
     strcat(write_buf, "Connection: close\r\n");
     strcat(write_buf, "\r\n");
@@ -401,7 +401,6 @@ int get_microsoft_graph_groups(char *token, char *response_buf){
 
     return 0;
 }
-
 
 /*
  * Function: request_azure_signin_code
