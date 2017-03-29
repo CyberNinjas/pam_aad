@@ -314,6 +314,8 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
 
 int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *token){
     /* initialize variables */
+    char secondary_buf[204800];
+
     BIO* bio;
     /* SSL* ssl; */
     SSL_CTX* ctx;
@@ -323,8 +325,9 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
     /* Variables used to read the response from the server */
     int size;
     char buf[2048];
-
     char write_buf[204800];
+    
+    printf("At the start of the function, response_buf is %s\n", response_buf);
 
     strcpy(response_buf, "");
     /* Registers the available SSL/TLS ciphers */
@@ -359,23 +362,31 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
     }
 
     /* Data to create a HTTP request */
-    strcat(write_buf, "GET /digipirates.onmicrosoft.com/isMemberOf?api-version=1.6 HTTP/1.1\r\n");
-    strcat(write_buf, "Authorization: Bearer ");
-    strcat(write_buf, token);
-    strcat(write_buf, "\r\n");
-    strcat(write_buf, "Host: graph.windows.net\r\n");
-    strcat(write_buf, "User-Agent: azure_authenticator_pam/1.0\r\n");
-    strcat(write_buf, "Connection: close\r\n");
-    strcat(write_buf, "Content-Type: application/json\r\n");
-    strcat(write_buf, "Content-Length: 114\r\n");
-    strcat(write_buf, "\r\n");
-    strcat(write_buf, "{\r\n");
-    //strcat(write_buf, "\"groupid\":)
+    strcat(secondary_buf, "GET /digipirates.onmicrosoft.com/isMemberOf?api-version=1.6 HTTP/1.1\r\n");
+    strcat(secondary_buf, "Authorization: Bearer ");
+    strcat(secondary_buf, token);
+    strcat(secondary_buf, "\r\n");
+    strcat(secondary_buf, "Host: graph.windows.net\r\n");
+    strcat(secondary_buf, "User-Agent: azure_authenticator_pam/1.0\r\n");
+    strcat(secondary_buf, "Connection: close\r\n");
+    strcat(secondary_buf, "Content-Type: application/json\r\n");
+    strcat(secondary_buf, "Content-Length: 114\r\n");
+    strcat(secondary_buf, "\r\n");
+    strcat(secondary_buf, "{\r\n\r\n");
+    strcat(secondary_buf, "\"groupId\":");
+    strcat(secondary_buf, "\"d0de9e6d-93e0-4fde-b05c-0db1d376d8a8\",\n");
+    strcat(secondary_buf, "\"memberId\":");
+    strcat(secondary_buf, "\"");
+    strcat(secondary_buf, user_object_id);
+    strcat(secondary_buf, "\"\n");
+    strcat(secondary_buf, "\r\n}\r\n\r\n\r\n");
 
-    printf("Request we're to write is as follows:\n%s\n", write_buf);
+
+    printf("Request we're to write is as follows:\n%s\n", secondary_buf);
+    printf("End of message\n");
 
 /* Attempts to write len bytes from buf to BIO */ 
-    if (BIO_write(bio, write_buf, strlen(write_buf)) <= 0)
+    if (BIO_write(bio, secondary_buf, strlen(secondary_buf)) <= 0)
     {
         /* handle failed write here */ 
         if (!BIO_should_retry(bio))
@@ -399,7 +410,7 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
         buf[size] = 0;
         strcat(response_buf, buf);
     }
-    strcpy(response_buf, "\0");
+    printf("Final value for response_buf is...%s\n", response_buf);
     BIO_free_all(bio);
     SSL_CTX_free(ctx);
     return 0;
@@ -459,8 +470,6 @@ int get_microsoft_graph_userprofile(char *token, char *response_buf){
     strcat(write_buf, "User-Agent: azure_authenticator_pam/1.0\r\n");
     strcat(write_buf, "Connection: close\r\n");
     strcat(write_buf, "\r\n");
-
-    printf("Request we're to write is as follows:\n%s\n", write_buf);
 
     /* Attempts to write len bytes from buf to BIO */ 
     if (BIO_write(bio, write_buf, strlen(write_buf)) <= 0)
@@ -523,15 +532,10 @@ int parse_user_object_id(char *response_buf, char* user_object_id_buf){
     char json_buf[4000];    
     int start, end;
     cJSON *json;
-    printf("Checking response buff bounds\n");
-    printf("Response buf has... %s", response_buf);
 
     find_json_bounds(response_buf, &start, &end);
     
-    printf("got bounds\n");
-
     fill_json_buffer(json_buf, response_buf, &start, &end);
-    printf("The json buffer looks like, %s\n ", json_buf);
     json = cJSON_Parse(json_buf);
     cJSON *object = cJSON_GetObjectItem(json, "objectId");
     if (object == NULL){
@@ -589,7 +593,6 @@ int main(int argc, char *argv[]){
     const char *client_id;
     const char *tenant; 
     char response_buf[160000];
-    char raw_group_buf[160000];
     char code_buf[100];
     char json_buf[1600000];
     char user_object_id_buf[100];
@@ -599,6 +602,7 @@ int main(int argc, char *argv[]){
     cJSON *json; 
     char user_code[20];
     char device_code[1000];
+    char raw_group_buf[160000];
     int resp;
     /* Provide hardcoded values for testing */
     resource_id = "00000002-0000-0000-c000-000000000000";
@@ -615,7 +619,6 @@ int main(int argc, char *argv[]){
     get_microsoft_graph_userprofile(response_buf, user_profile_buf);
     parse_user_object_id(user_profile_buf, user_object_id_buf);
     get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, response_buf);
-    printf("Response from the API is %s\n", raw_group_buf);
     // parse_user_groups(raw_group_buf, group_membership_value);
     // if (strcmp("true", group_membership_value)){
     //     printf("User is part of the required group\n");
