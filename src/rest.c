@@ -493,7 +493,7 @@ int get_microsoft_graph_userprofile(char *token, char *response_buf){
     return 0;
 }
 
-int parse_user_groups(char *response_buf, char* group_object_boolean){
+int parse_user_groups(char *response_buf, char* group_membership_value_buf){
     char json_buf[4000];    
     int start, end;
     cJSON *json;
@@ -513,7 +513,7 @@ int parse_user_groups(char *response_buf, char* group_object_boolean){
         printf("Something failed.\n");
         return 1;
    }
-    strcpy(user_object_id_buf, cJSON_GetObjectItem(json, "value")->valuestring);
+    strcpy(group_membership_value_buf, cJSON_GetObjectItem(json, "value")->valuestring);
     
     return 0;
 }
@@ -593,7 +593,7 @@ int main(int argc, char *argv[]){
     char code_buf[100];
     char json_buf[1600000];
     char user_object_id_buf[100];
-    char group_object_id[300];
+    char group_membership_value[20];
     char user_profile_buf[100000];
     char user_group_buf[100000];
     cJSON *json; 
@@ -615,12 +615,12 @@ int main(int argc, char *argv[]){
     get_microsoft_graph_userprofile(response_buf, user_profile_buf);
     parse_user_object_id(user_profile_buf, user_object_id_buf);
     get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, response_buf);
-    parse_user_groups(raw_group_buf, group_object_id);
     printf("Response from the API is %s\n", raw_group_buf);
-    if (strcmp("true", group_membership_value)){
-        printf("User is part of the required group\n");
-        return 0;
-    }
-    //User is not part of the group.
+    // parse_user_groups(raw_group_buf, group_membership_value);
+    // if (strcmp("true", group_membership_value)){
+    //     printf("User is part of the required group\n");
+    //     return 0;
+    // }
+    // //User is not part of the group.
     return 1;
 }
