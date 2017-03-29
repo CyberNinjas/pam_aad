@@ -374,7 +374,7 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
     strcat(secondary_buf, "\r\n");
     strcat(secondary_buf, "{\r\n\r\n");
     strcat(secondary_buf, "\"groupId\":");
-    strcat(secondary_buf, "\"d0de9e6d-93e0-4fde-b05c-0db1d376d8a8\",\n");
+    strcat(secondary_buf, "\"d0de9e6d-93e0-4fde-b05c-0db1d376d8a8\",\n"); the actual value
     strcat(secondary_buf, "\"memberId\":");
     strcat(secondary_buf, "\"");
     strcat(secondary_buf, user_object_id);
@@ -502,11 +502,12 @@ int get_microsoft_graph_userprofile(char *token, char *response_buf){
     return 0;
 }
 
-int parse_user_groups(char *response_buf, char* group_membership_value_buf){
+int parse_user_groups(char *response_buf, cJSON* group_membership_value){
     char json_buf[400];
     char additional_buf[400];    
     int start, end;
     cJSON *json;
+    int checkval;
     printf("Checking response buff bounds\n");
     printf("Response buf has... %s", response_buf);
     strcat(response_buf, "\0");
@@ -523,10 +524,8 @@ int parse_user_groups(char *response_buf, char* group_membership_value_buf){
         return 1;
     }
     printf("json was parsed\n");
-
-    strcpy(group_membership_value_buf, cJSON_GetObjectItem(json, "value"));
-    printf("group membership contains...%s\n", group_membership_value_buf);
-    return 0;
+    checkval = cJSON_GetObjectItem(json, "value")->type;
+    return checkval;
 }
 
 
@@ -598,10 +597,10 @@ int main(int argc, char *argv[]){
     char code_buf[100];
     char json_buf[1600000];
     char user_object_id_buf[100];
-    char group_membership_value[20];
     char user_profile_buf[100000];
     char user_group_buf[100000];
-    cJSON *json; 
+    cJSON *json;
+    cJSON *group_membership_value; 
     char user_code[20];
     char device_code[1000];
     char raw_group_buf[160000];
@@ -621,8 +620,8 @@ int main(int argc, char *argv[]){
     get_microsoft_graph_userprofile(response_buf, user_profile_buf);
     parse_user_object_id(user_profile_buf, user_object_id_buf);
     get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, response_buf);
-    parse_user_groups(raw_group_buf, group_membership_value);
-     if (strcmp("true", group_membership_value)){
+    int ingroup = parse_user_groups(raw_group_buf, group_membership_value);
+     if (ingroup == 2){
          printf("User is part of the required group\n");
          return 0;
      }
