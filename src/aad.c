@@ -35,6 +35,7 @@ typedef struct Params {
     const char *      resource_id;
     const char *      tenant;
     const char *      client_id;
+    const char *      required_group_id;
 } Params;
 
 static void log_message(int priority, pam_handle_t *pamh,
@@ -136,6 +137,10 @@ static int *request_code(char *code_buf, const char *resource_id, const char *cl
     return 0;
 }
 
+static int azure_user_in_group(const char *token, const char *required_group_id){
+    return request_azure_group_membership(token, required_group_id);
+}
+
 int request_azure_auth(pam_handle_t *pamh, int echocode, const char *resource_id, const char *client_id, const char *tenant, const char *token_buf){
   char prompt[1000], code[1000], code_buf[1000], device_code[10000];
   strcpy(prompt, CODE_PROMPT);
@@ -168,7 +173,9 @@ for (i = 0; i < argc; ++i){
         params -> resource_id = argv[i] + 12;
     } else if (!memcmp(argv[i],"tenant=", 7)){
         params -> tenant = argv[i] + 7;
-    }else {
+    } else if(!memcmp(argv[i], "required_group_id=", 18)){
+        params -> required_group_id = argv[i] + 18;
+      }else {
         log_message(LOG_ERR, pamh, "Unrecognized option \"%s\"", argv[i]);
         return -1;
     }
@@ -193,7 +200,10 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
   username = get_user_name(pamh, &params);
   int auth = request_azure_auth(pamh, params.echocode, params.resource_id, params.client_id, params.tenant, token_buf);
   if (auth == 0 && azure_token_user_match(username, token_buf) == 0){
+      //need to check if user is part of required groups
+      if (azure_user_in_group(token_buf, params.required_group_id) == 0){
           rc = PAM_SUCCESS;
+      }
   }
 return rc;
 }
