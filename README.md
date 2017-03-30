@@ -27,7 +27,7 @@ sudo make install
 ## Configuration
 Edit ```/etc/pam.d/sshd``` with your favorite text editor and add the following line at the top:
 
-```auth required aad.so client_id=yourid resource_id=resourceid tenant=YourOffice365Tenant``` 
+```auth required aad.so client_id=yourid resource_id=resourceid tenant=YourOffice365Tenant required_group_id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx``` 
 
 ## Module options
 
@@ -42,6 +42,10 @@ This is the id of your application. Once you have create an application through 
 ### tenant
 
 Your organization. [xxxxxx].onmicrosoft.com, where [xxxxxx] is replaced by your 0365 organization name. 
+
+#### required_group_id
+
+[Optional] - if provided, will check if the user authenticating to the application is part of the group specified. This allows you to restrict access to certain machines to specific members of your organization. If not provided, pam_aad will not check any group IDs and will authenticate the user regardless of what groups they are a part of. 
 
 ### Current behavior
 
