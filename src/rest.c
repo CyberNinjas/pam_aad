@@ -25,7 +25,7 @@
  * returns 0 if completion is successful, 1 if it fails.
  */
 
-int poll_microsoft_for_token(char *code, const char *resource_id, const char *client_id, char *response_buf){
+int poll_microsoft_for_token(char *code, char *resource_id, char *client_id, char *response_buf){
      /* initialize variables */
     BIO* bio;
     /* SSL* ssl; */
@@ -133,7 +133,7 @@ int poll_microsoft_for_token(char *code, const char *resource_id, const char *cl
  *
  * returns a 0 if the function completes successfully, and 0 otherwise.
  */
-int request_azure_oauth_token(char *code, const char *resource_id, const char *client_id, const char *token_buf){
+int request_azure_oauth_token(char *code, char *resource_id, char *client_id, char *token_buf){
     int start, end;
     char response_buf[9000];
     char json_buf[9000];
@@ -142,16 +142,13 @@ int request_azure_oauth_token(char *code, const char *resource_id, const char *c
     poll_microsoft_for_token(code, resource_id, client_id, response_buf);
     find_json_bounds(response_buf, &start, &end);
     fill_json_buffer(json_buf, response_buf, &start, &end);
-    printf("The json buffer is...%s\n", json_buf);
     json = cJSON_Parse(json_buf);
     cJSON *access = cJSON_GetObjectItem(json, "access_token");
     if (access == NULL){
         /* Something failed. */
-        printf("Something failed.\n");
         strcpy(token_buf, "FAILURE");
         return 1;
    }
-   printf("Has an access token!\n");
    strcpy(token_buf, cJSON_GetObjectItem(json, "access_token")->valuestring);
     return 0;
 }
@@ -213,7 +210,7 @@ int find_json_bounds(char *json_buf, int *start, int *end){
     return 0;
 }
 
-int read_code_from_microsoft(const char *resource_id, const char *client_id, const char *tenant, char *response_buf){
+int read_code_from_microsoft(char *resource_id, char *client_id, char *tenant, char *response_buf){
     /* initialize variables */
     BIO* bio;
     /* SSL* ssl; */
@@ -277,7 +274,6 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
     strcat(write_buf, "\r\n");
     strcat(write_buf, post_buf);
     strcat(write_buf, "\r\n");
-    printf("going to send %s\n", write_buf);
 
     /* Attempts to write len bytes from buf to BIO */ 
     if (BIO_write(bio, write_buf, strlen(write_buf)) <= 0)
@@ -327,8 +323,6 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
     char buf[2048];
     char write_buf[204800];
     
-    printf("At the start of the function, response_buf is %s\n", response_buf);
-
     strcpy(response_buf, "");
     /* Registers the available SSL/TLS ciphers */
     /* Starts security layer */
@@ -385,10 +379,6 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
     strcat(secondary_buf, "\"\n");
     strcat(secondary_buf, "\r\n}\r\n\r\n\r\n");
 
-
-    printf("Request we're to write is as follows:\n%s\n", secondary_buf);
-    printf("End of message\n");
-
 /* Attempts to write len bytes from buf to BIO */ 
     if (BIO_write(bio, secondary_buf, strlen(secondary_buf)) <= 0)
     {
@@ -414,7 +404,6 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
         buf[size] = 0;
         strcat(response_buf, buf);
     }
-    printf("Final value for response_buf is...%s\n", response_buf);
     BIO_free_all(bio);
     SSL_CTX_free(ctx);
     return 0;
@@ -509,28 +498,19 @@ int get_microsoft_graph_userprofile(char *token, char *response_buf, char *tenan
 }
 
 int parse_user_groups(char *response_buf, cJSON* group_membership_value){
-    char json_buf[400];
-    char additional_buf[400];    
+    char garbage[1000];
+    char json_buf[4000];
+    char doublegarbage[10000];
     int start, end;
     cJSON *json;
-    int checkval;
-    printf("Checking response buff bounds\n");
-    printf("Response buf has... %s", response_buf);
     strcat(response_buf, "\0");
-
     find_json_bounds(response_buf, &start, &end);
-    
-    printf("got bounds\n");
-
     fill_json_buffer(json_buf, response_buf, &start, &end);
-    printf("The json buffer looks like, %s\n ", json_buf);
     json = cJSON_Parse(json_buf);
     if (json == NULL){
-        printf("json was not parsed...\n");
         return 1;
     }
-    printf("json was parsed\n");
-    checkval = cJSON_GetObjectItem(json, "value")->type;
+    int checkval = cJSON_GetObjectItem(json, "value")->type;
     return checkval;
 }
 
@@ -573,7 +553,7 @@ int parse_user_object_id(char *response_buf, char* user_object_id_buf){
  * handling and there will need to be some way to log failures. 
 */
 
-int request_azure_signin_code(char *user_code, const char *resource_id, const char *client_id, const char *tenant, char *device_code){
+int request_azure_signin_code(char *user_code, char *resource_id, char *client_id, char *tenant, char *device_code){
     char response_buf[2048];
     char code_buf[100];
     char json_buf[2048];
@@ -593,62 +573,60 @@ int request_azure_signin_code(char *user_code, const char *resource_id, const ch
     return EXIT_SUCCESS;
 }
 
-int request_azure_group_membership(const char *token, const char *required_group_id, const char *tenant){
+int request_azure_group_membership(char *token, char *required_group_id, char *tenant){
+    int success = 2;
     char user_profile_buf[1000];
     char user_object_id_buf[100];
-    char raw_group_buf[1000000];
-    CJSON *group_membership_value;
+    char raw_group_buf[10000];
+    cJSON *group_membership_value; 
 
      get_microsoft_graph_userprofile(token, user_profile_buf, tenant);
      parse_user_object_id(user_profile_buf, user_object_id_buf);
-     get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, token, tenant);
-    int ingroup = parse_user_groups(raw_group_buf, group_membership_value);
-     if (ingroup == 2){
+     get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, token, tenant, required_group_id);
+     int is_in_group = parse_user_groups(raw_group_buf, group_membership_value);
+     if(is_in_group == success){
          return 0;
      }
-     //User is not part of the group.
-    return 1;
+     return 1;
 }
 
-/* purely for testing, takes no command line args */
-// int main(int argc, char *argv[]){
-//     /* initialize variables */
-//     const char *resource_id;
-//     const char *client_id;
-//     const char *tenant; 
-//     char response_buf[160000];
-//     char code_buf[100];
-//     char json_buf[1600000];
-//     char user_object_id_buf[100];
-//     char user_profile_buf[100000];
-//     char user_group_buf[100000];
-//     cJSON *json;
-//     cJSON *group_membership_value; 
-//     char user_code[20];
-//     char device_code[1000];
-//     char raw_group_buf[160000];
-//     int resp;
-//     /* Provide hardcoded values for testing */
-//     resource_id = "00000002-0000-0000-c000-000000000000";
-//     client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
-//     tenant = "digipirates.onmicrosoft.com";
-//     request_azure_signin_code(user_code, resource_id, client_id, tenant, device_code);
-//     int start, end;
-//     printf("user code is %s\n", user_code);
-//     printf("device code is %s\n", device_code);
-//     char key[1];
-//     puts("Press any key to continue...");
-//     getchar();
-//     resp = request_azure_oauth_token(device_code, resource_id, client_id, response_buf);
-//     get_microsoft_graph_userprofile(response_buf, user_profile_buf);
-//     parse_user_object_id(user_profile_buf, user_object_id_buf);
-//     get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, response_buf);
-//     int ingroup = parse_user_groups(raw_group_buf, group_membership_value);
-//      if (ingroup == 2){
-//          printf("User is part of the required group\n");
+// /* purely for testing, takes no command line args */
+//  int main(int argc, char *argv[]){
+//      /* initialize variables */
+//      char *resource_id;
+//      char *client_id;
+//      char *tenant; 
+//      char *required_group_id;
+//      char response_buf[16000];
+//      char code_buf[100];
+//      char json_buf[16000];
+//      char user_object_id_buf[100];
+//      char user_profile_buf[10000];
+//      char user_group_buf[10000];
+//      cJSON *json;
+//      cJSON *group_membership_value; 
+//      char user_code[20];
+//      char device_code[1000];
+//      char raw_group_buf[160000];
+//      int resp;
+//      /* Provide hardcoded values for testing */
+//      resource_id = "00000002-0000-0000-c000-000000000000";
+//      client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
+//      tenant = "digipirates.onmicrosoft.com";
+//      required_group_id = "d0de9e6d-93e0-4fde-b05c-0db1d376d8a8";
+//      request_azure_signin_code(user_code, resource_id, client_id, tenant, device_code);
+//      int start, end;
+//      printf("user code is %s\n", user_code);
+//      printf("device code is %s\n", device_code);
+//      char key[1];
+//      puts("Press any key to continue...");
+//      getchar();
+//      resp = request_azure_oauth_token(device_code, resource_id, client_id, response_buf);
+//      int inGroup = request_azure_group_membership(response_buf, required_group_id, tenant);
+//      if (inGroup == 2){
+//          printf("\nUser is in the correct group!\n");
 //          return 0;
 //      }
-//      printf("User is not part of the required group\n");
-//      //User is not part of the group.
-//     return 1;
-// }
+//      printf("User is not in the correct group...");
+//      return 1;
+//  }
