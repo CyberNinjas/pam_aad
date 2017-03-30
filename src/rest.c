@@ -374,7 +374,7 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
     strcat(secondary_buf, "\r\n");
     strcat(secondary_buf, "{\r\n\r\n");
     strcat(secondary_buf, "\"groupId\":");
-    strcat(secondary_buf, "\"d0de9e6d-93e0-4fde-b05c-0db1d376d8a8\",\n"); the actual value
+    strcat(secondary_buf, "\"d0de9e6d-93e0-4fde-b05c-0db1d376d8a8\",\n");
     strcat(secondary_buf, "\"memberId\":");
     strcat(secondary_buf, "\"");
     strcat(secondary_buf, user_object_id);
