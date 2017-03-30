@@ -45,7 +45,7 @@ Your organization. [xxxxxx].onmicrosoft.com, where [xxxxxx] is replaced by your 
 
 ### required_group_id
 
-[Optional] - if provided, will check if the user authenticating to the application is part of the group specified. This allows you to restrict access to certain machines to specific members of your organization. If not provided, pam_aad will not check any group IDs and will authenticate the user regardless of what groups they are a part of. 
+Checks if the user authenticating to the application is part of the group specified. This allows you to restrict access to certain machines to specific members of your organization.
 
 ### Current behavior
 
