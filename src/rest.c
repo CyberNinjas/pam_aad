@@ -312,7 +312,7 @@ int read_code_from_microsoft(const char *resource_id, const char *client_id, con
 }
 
 
-int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *token){
+int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *token, char *tenant, char *group_object_id){
     /* initialize variables */
     char secondary_buf[204800];
 
@@ -362,7 +362,9 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
     }
 
     /* Data to create a HTTP request */
-    strcat(secondary_buf, "GET /digipirates.onmicrosoft.com/isMemberOf?api-version=1.6 HTTP/1.1\r\n");
+    strcat(secondary_buf, "GET /");
+    strcat(secondary_buf, tenant);
+    strcat(secondary_buf, "/isMemberOf?api-version=1.6 HTTP/1.1\r\n");
     strcat(secondary_buf, "Authorization: Bearer ");
     strcat(secondary_buf, token);
     strcat(secondary_buf, "\r\n");
@@ -374,7 +376,9 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
     strcat(secondary_buf, "\r\n");
     strcat(secondary_buf, "{\r\n\r\n");
     strcat(secondary_buf, "\"groupId\":");
-    strcat(secondary_buf, "\"d0de9e6d-93e0-4fde-b05c-0db1d376d8a8\",\n");
+    strcat(secondary_buf, "\"");
+    strcat(secondary_buf, group_object_id);
+    strcat(secondary_buf, "\",\n");
     strcat(secondary_buf, "\"memberId\":");
     strcat(secondary_buf, "\"");
     strcat(secondary_buf, user_object_id);
@@ -416,7 +420,7 @@ int get_microsoft_graph_groups(char *user_object_id, char *response_buf, char *t
     return 0;
 }
 
-int get_microsoft_graph_userprofile(char *token, char *response_buf){
+int get_microsoft_graph_userprofile(char *token, char *response_buf, char *tenant){
     /* initialize variables */
     BIO* bio;
     /* SSL* ssl; */
@@ -462,7 +466,9 @@ int get_microsoft_graph_userprofile(char *token, char *response_buf){
     }
 
     /* Data to create a HTTP request */
-    strcat(write_buf, "GET /digipirates.onmicrosoft.com/me?api-version=1.6 HTTP/1.1\r\n");
+    strcat(write_buf, "GET /");
+    strcat(write_buf, tenant);
+    strcat(write_buf, "/me?api-version=1.6 HTTP/1.1\r\n");
     strcat(write_buf, "Authorization: Bearer ");
     strcat(write_buf, token);
     strcat(write_buf, "\r\n");
@@ -587,45 +593,62 @@ int request_azure_signin_code(char *user_code, const char *resource_id, const ch
     return EXIT_SUCCESS;
 }
 
-/* purely for testing, takes no command line args */
-int main(int argc, char *argv[]){
-    /* initialize variables */
-    const char *resource_id;
-    const char *client_id;
-    const char *tenant; 
-    char response_buf[160000];
-    char code_buf[100];
-    char json_buf[1600000];
+int request_azure_group_membership(const char *token, const char *required_group_id, const char *tenant){
+    char user_profile_buf[1000];
     char user_object_id_buf[100];
-    char user_profile_buf[100000];
-    char user_group_buf[100000];
-    cJSON *json;
-    cJSON *group_membership_value; 
-    char user_code[20];
-    char device_code[1000];
-    char raw_group_buf[160000];
-    int resp;
-    /* Provide hardcoded values for testing */
-    resource_id = "00000002-0000-0000-c000-000000000000";
-    client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
-    tenant = "digipirates.onmicrosoft.com";
-    request_azure_signin_code(user_code, resource_id, client_id, tenant, device_code);
-    int start, end;
-    printf("user code is %s\n", user_code);
-    printf("device code is %s\n", device_code);
-    char key[1];
-    puts("Press any key to continue...");
-    getchar();
-    resp = request_azure_oauth_token(device_code, resource_id, client_id, response_buf);
-    get_microsoft_graph_userprofile(response_buf, user_profile_buf);
-    parse_user_object_id(user_profile_buf, user_object_id_buf);
-    get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, response_buf);
+    char raw_group_buf[1000000];
+    CJSON *group_membership_value;
+
+     get_microsoft_graph_userprofile(token, user_profile_buf, tenant);
+     parse_user_object_id(user_profile_buf, user_object_id_buf);
+     get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, token, tenant);
     int ingroup = parse_user_groups(raw_group_buf, group_membership_value);
      if (ingroup == 2){
-         printf("User is part of the required group\n");
          return 0;
      }
-     printf("User is not part of the required group\n");
      //User is not part of the group.
     return 1;
 }
+
+/* purely for testing, takes no command line args */
+// int main(int argc, char *argv[]){
+//     /* initialize variables */
+//     const char *resource_id;
+//     const char *client_id;
+//     const char *tenant; 
+//     char response_buf[160000];
+//     char code_buf[100];
+//     char json_buf[1600000];
+//     char user_object_id_buf[100];
+//     char user_profile_buf[100000];
+//     char user_group_buf[100000];
+//     cJSON *json;
+//     cJSON *group_membership_value; 
+//     char user_code[20];
+//     char device_code[1000];
+//     char raw_group_buf[160000];
+//     int resp;
+//     /* Provide hardcoded values for testing */
+//     resource_id = "00000002-0000-0000-c000-000000000000";
+//     client_id = "7262ee1e-6f52-4855-867c-727fc64b26d5";
+//     tenant = "digipirates.onmicrosoft.com";
+//     request_azure_signin_code(user_code, resource_id, client_id, tenant, device_code);
+//     int start, end;
+//     printf("user code is %s\n", user_code);
+//     printf("device code is %s\n", device_code);
+//     char key[1];
+//     puts("Press any key to continue...");
+//     getchar();
+//     resp = request_azure_oauth_token(device_code, resource_id, client_id, response_buf);
+//     get_microsoft_graph_userprofile(response_buf, user_profile_buf);
+//     parse_user_object_id(user_profile_buf, user_object_id_buf);
+//     get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, response_buf);
+//     int ingroup = parse_user_groups(raw_group_buf, group_membership_value);
+//      if (ingroup == 2){
+//          printf("User is part of the required group\n");
+//          return 0;
+//      }
+//      printf("User is not part of the required group\n");
+//      //User is not part of the group.
+//     return 1;
+// }

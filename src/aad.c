@@ -137,8 +137,8 @@ static int *request_code(char *code_buf, const char *resource_id, const char *cl
     return 0;
 }
 
-static int azure_user_in_group(const char *token, const char *required_group_id){
-    return request_azure_group_membership(token, required_group_id);
+static int azure_user_in_group(const char *token, const char *required_group_id, const char *tenant){
+    return request_azure_group_membership(token, required_group_id, tenant);
 }
 
 int request_azure_auth(pam_handle_t *pamh, int echocode, const char *resource_id, const char *client_id, const char *tenant, const char *token_buf){
@@ -201,7 +201,7 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
   int auth = request_azure_auth(pamh, params.echocode, params.resource_id, params.client_id, params.tenant, token_buf);
   if (auth == 0 && azure_token_user_match(username, token_buf) == 0){
       //need to check if user is part of required groups
-      if (azure_user_in_group(token_buf, params.required_group_id) == 0){
+      if (azure_user_in_group(token_buf, params.required_group_id, params.tenant) == 0){
           rc = PAM_SUCCESS;
       }
   }
