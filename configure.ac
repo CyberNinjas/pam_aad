@@ -1,5 +1,5 @@
 AC_INIT(pam-azure-active-directory, 0.8, info@cyberninjas.com)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 
 AC_PROG_CC
 
