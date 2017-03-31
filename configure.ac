@@ -32,10 +32,11 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     (void) pam_get_item(ph, 0, item);
 ]])],[AC_DEFINE([PAM_CONST], [const], \
         [Prevent certain PAM functions from using const arguments])
-             AC_MSG_RESULTS([yes])],
+             AC_MSG_RESULT([yes])],
         [AC_DEFINE([PAM_CONST], [], \
         [Prevent certain PAM functions from using const argument])
         AC_MSG_RESULT([no])])
+AC_LANG_POP(C)
 
 AC_CONFIG_FILES(Makefile)
 AC_OUTPUT
