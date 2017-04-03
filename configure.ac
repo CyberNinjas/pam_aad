@@ -61,14 +61,10 @@ AC_CHECK_HEADERS([openssl/crypto.h openssl/x509.h openssl/pem.h openssl/ssl.h op
 LIBCURL_CHECK_CONFIG([yes], [], [], [AC_MSG_ERROR([libcurl development files required])])
 
 ### Check for math
-AC_CHECK_LIB([m], [cos], [])
+AC_CHECK_LIB([m], pow, [], [AC_MSG_ERROR([Math libraries required - libm not found])])
 libm=$ac_status
 AC_CHECK_HEADERS([math.h], [], [AC_MSG_ERROR([Math headers required])])
 
-if test $libm -gt 0
-  then echo "I can't find the standard math library. Panic now."
-  stop=1
-fi
 
 ### Check for jwt 
 AC_CHECK_LIB([jwt], jwt_set_alg, [], [AC_MSG_ERROR([JWT libraries required])])
