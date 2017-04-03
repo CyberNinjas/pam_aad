@@ -65,6 +65,7 @@ permitted by applicable law.
 
 #### Issues with the above:
 
-1. Note that I still have to have the user truncate their own usernames. 
+1. Users will need to truncate their usernames. 31 characters is the maximum length for Linux. We have not determined at this time how to truncate the usernames after PAM gets them through the user's SSH login.  
 2. It prompts the user, letting them know they're using keyboard-interactive authentication.
 3. Requires a user to hit enter, instead of just displaying the message instead of polling for a set amount of time and logging in when the token is acquired and validated. 
+4. The truncated username must represent a legitimate user on the server already. That is, an administrator must have created the user before someone can authenticate to the machine as that user. 
