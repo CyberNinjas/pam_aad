@@ -5,20 +5,18 @@ AC_PREREQ([2.69])
 AC_INIT([pam_aad], [0.8], [info@cyberninjas.com])
 AC_CONFIG_SRCDIR([src/aad.c])
 AC_CONFIG_HEADERS([config.h])
+AC_DISABLE_STATIC
+AC_ENABLE_SHARED
+LT_INIT
 
 # Checks for programs.
 AC_PROG_CC
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lcrypto':
 AC_CHECK_LIB([crypto], [CRYPTO_new_ex_data])
-# FIXME: Replace `main' with a function in `-ljwt':
 AC_CHECK_LIB([jwt], [jwt_set_alg])
-# FIXME: Replace `main' with a function in `-lm':
 AC_CHECK_LIB([m], [cos])
-# FIXME: Replace `main' with a function in `-lpam':
 AC_CHECK_LIB([pam], [pam_get_user])
-# FIXME: Replace `main' with a function in `-lssl':
 AC_CHECK_LIB([ssl], [SSL_library_init])
 
 # Checks for header files.
@@ -34,3 +32,12 @@ AC_CHECK_FUNCS([floor memset pow strchr strdup strstr])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+
+echo "
+  $PACKAGE_NAME version $PACKAGE_VERSION
+  Prefix.........: $prefix
+  Debug Build....: $debug
+  C Compiler.....: $CC $CFLAGS
+  Linker.........: $LD $LDFLAGS $LIBS
+"
+
