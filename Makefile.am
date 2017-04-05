@@ -2,7 +2,7 @@ pamdir = $(libdir)/security
 ACLOCAL_AMFLAGS = -I m4
 dist_doc_data = README.md
 
-MODULES_LDFLAGS = -avoid-version -module -shared -export-dynamic
+MODULES_LDFLAGS = -PIC -fno-stack-protector -avoid-version -module -shared -export-dynamic
 
 lib_LTLIBRARIES= pam-aad.la
 
