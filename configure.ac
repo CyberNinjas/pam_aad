@@ -1,16 +1,31 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.65])
 AC_INIT([pam_aad], [0.8], [info@cyberninjas.com])
-AC_CONFIG_SRCDIR([src/aad.c])
-AC_CONFIG_HEADERS([config.h])
-AC_DISABLE_STATIC
-AC_ENABLE_SHARED
-LT_INIT
 
+AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([m4])
+AC_CANONICAL_HOST
+
+AM_INIT_AUTOMAKE([1.11 foreign])
+AM_SILENT_RULES([yes])
+AM_MAINTAINER_MODE 
+
+AC_USE_SYSTEM_EXTENSIONS
 # Checks for programs.
-AC_PROG_CC
+AC_PROG_CC_C_O 
+AM_PROG_AR
+AC_LIBTOOL_WIN32_DLL
+AC_DISABLE_DSTATIC
+AC_PROG_LIBTOOL
+
+AC_ARG_ENABLE([man], 
+[AS_HELP_STRING([--disable-man], [Disable man page generation])],
+[:],
+[enable_man=yes]
+)
+
 
 # Checks for libraries.
 AC_CHECK_LIB([crypto], [CRYPTO_new_ex_data])
