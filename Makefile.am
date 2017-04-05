@@ -1,8 +1,12 @@
 pamdir = $(libdir)/security
-
+ACLOCAL_AMFLAGS = -I m4
 dist_doc_data = README.md
 
 MODULES_LDFLAGS = -avoid-version -module -shared -export-dynamic
+
+lib_LTLIBRARIES= pam-aad.la
+
+pam_aad_la_SOURCES = src/aad.c
 
 CORE_SRC = 
 CORE_SRC += src/rest.c src/rest.h
@@ -10,9 +14,7 @@ CORE_SRC += src/cJSON.c src/cJSON.h
 CORE_SRC += src/utils.c src/utils.h
 CORE_SRC += src/jwt.c src/jwt.h
 
-pam_aad_la_SOURCES = \
-	src/aad.c \
-	$(CORE_SRC)
+pam_aad_la_SOURCES  += $(CORE_SRC)
 
 pam_aad_la_LIBADD = -lpam -lssl -lcrypto -lm -ljwt
 pam_aad_la_CFLAGS = $(AM_CFLAGS)
