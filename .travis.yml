@@ -4,6 +4,10 @@ compiler:
   - clang
   - gcc
 
+before_install:
+  - sudo add-apt-repository ppa:ben-collins/libjwt
+  - sudo apt-get update
+
 script: autoreconf --install && ./configure && make
 
 sudo: false
