@@ -200,10 +200,7 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
   username = get_user_name(pamh, &params);
   int auth = request_azure_auth(pamh, params.echocode, params.resource_id, params.client_id, params.tenant, token_buf);
   if (auth == 0 && azure_token_user_match(username, token_buf) == 0){
-      //need to check if user is part of required groups
-      if (azure_user_in_group(token_buf, params.required_group_id, params.tenant) == 0){
-          rc = PAM_SUCCESS;
-      }
+      rc = PAM_SUCCESS;
   }
 return rc;
 }
@@ -214,6 +211,11 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags,
 }
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc,
+                                    const char **argv){
+  return PAM_SUCCESS;
+}
+
+PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc,
                                     const char **argv){
   return PAM_SUCCESS;
 }
