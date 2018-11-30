@@ -1,4 +1,5 @@
-# pam_aad
+# pam_aad [![Build Status][travis-badge]][travis-url]
+
 Azure Active Directory PAM Module
 
 This PAM module aims to provide Azure Active Directory login over SSH to linux boxes.
@@ -69,3 +70,6 @@ permitted by applicable law.
 2. It prompts the user, letting them know they're using keyboard-interactive authentication.
 3. Requires a user to hit enter, instead of just displaying the message instead of polling for a set amount of time and logging in when the token is acquired and validated. 
 4. The truncated username must represent a legitimate user on the server already. That is, an administrator must have created the user before someone can authenticate to the machine as that user. 
+
+[travis-badge]: https://travis-ci.org/CyberNinjas/pam_aad.svg?branch=c-dev
+[travis-url]: https://travis-ci.org/CyberNinjas/pam_aad
