@@ -1,15 +1,16 @@
 language: c
 
 compiler:
-	- clang
-	- gcc
+  - clang
+  - gcc
 
-script: ./boostrap.sh && ./configure && make && make check
+script: autoreconf --install && ./configure && make
 
 sudo: false
 
 addons:
-	apt:
-		packages:
-		- libpam0g-dev
-		
+  apt:
+    packages:
+        - libjwt-dev
+        - libpam0g-dev
+        - libssl-dev
