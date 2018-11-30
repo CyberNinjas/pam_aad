@@ -1,20 +1,12 @@
 language: c
 
-compiler:
-  - clang
-  - gcc
+sudo: required
+
+services:
+  - docker
 
 before_install:
-  - sudo add-apt-repository ppa:ben-collins/libjwt
-  - sudo apt-get update
+  - docker build . -t cyberninjas/pam_aad
 
-script: autoreconf --install && ./configure && make
-
-sudo: false
-
-addons:
-  apt:
-    packages:
-        - libjwt-dev
-        - libpam0g-dev
-        - libssl-dev
+script:
+  - docker run -v $(pwd):/usr/src/cyberninjas/pam_aad cyberninjas/pam_aad:latest
