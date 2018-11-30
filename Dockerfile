@@ -9,5 +9,3 @@ RUN apt update && apt upgrade -y && \
 RUN autoreconf --install && \
     ./configure && \
     make
-
-CMD ["make", "check"]
