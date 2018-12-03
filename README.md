@@ -1,4 +1,4 @@
-# pam_aad [![Build Status][travis-badge]][travis-url]
+# pam_aad [![Build Status][travis-badge]][travis-url] [![GPL-3.0-or-later][gpl-badge]][gpl-license]
 
 Azure Active Directory PAM Module
 
@@ -71,5 +71,7 @@ permitted by applicable law.
 3. Requires a user to hit enter, instead of just displaying the message instead of polling for a set amount of time and logging in when the token is acquired and validated. 
 4. The truncated username must represent a legitimate user on the server already. That is, an administrator must have created the user before someone can authenticate to the machine as that user. 
 
+[gpl-badge]: https://img.shields.io/badge/license-GPL-green.svg
+[gpl-license]: LICENSE
 [travis-badge]: https://travis-ci.org/CyberNinjas/pam_aad.svg?branch=c-dev
 [travis-url]: https://travis-ci.org/CyberNinjas/pam_aad
