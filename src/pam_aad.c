@@ -163,8 +163,8 @@ int request_azure_auth(pam_handle_t *pamh, int echocode, const char *resource_id
 
 static int parse_args(pam_handle_t *pamh, int argc, const char **argv,
                      Params *params){
-params->debug = 0;
-params->echocode = PAM_PROMPT_ECHO_OFF;
+params->debug = 1;
+params->echocode = PAM_PROMPT_ECHO_ON;
 int i;
 for (i = 0; i < argc; ++i){
     if(!memcmp(argv[i], "client_id=", 10)){
