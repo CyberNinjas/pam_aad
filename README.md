@@ -2,15 +2,9 @@
 
 Azure Active Directory PAM Module
 
-This PAM module aims to provide Azure Active Directory login over SSH to linux boxes.
+_This PAM module aims to provide Azure Active Directory login to Linux over SSH._
 
-## Design Goals
-
-1. Few (if any) external dependencies to maximize portability.
-
-2. High stability.
-
-3. Should be able to build on all systems with:
+## Installation
 
 ```
 ./bootstrap.sh
@@ -19,13 +13,8 @@ make
 sudo make install
 ```
 
-## Installation
-
-```
-./buildPam.sh
-```
-
 ## Configuration
+
 Edit ```/etc/pam.d/sshd``` with your favorite text editor and add the following line at the top:
 
 ```auth required aad.so client_id=yourid resource_id=resourceid tenant=YourOffice365Tenant required_group_id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx``` 
@@ -38,7 +27,7 @@ This is the id of your application. Once you have create an application through 
 
 ### resource_id
  
- Depicts the identifier of the WebAPI your client wants to access on behalf of the user. For PAM, that will most likely be 00000002-0000-0000-c000-000000000000. 
+Depicts the identifier of the WebAPI your client wants to access on behalf of the user. For PAM, that will most likely be 00000002-0000-0000-c000-000000000000. 
 
 ### tenant
 
