@@ -61,6 +61,6 @@ permitted by applicable law.
 4. The truncated username must represent a legitimate user on the server already. That is, an administrator must have created the user before someone can authenticate to the machine as that user. 
 
 [gpl-badge]: https://img.shields.io/badge/license-GPL-green.svg
-[gpl-license]: LICENSE
+[gpl-license]: COPYING
 [travis-badge]: https://travis-ci.org/CyberNinjas/pam_aad.svg?branch=c-dev
 [travis-url]: https://travis-ci.org/CyberNinjas/pam_aad
