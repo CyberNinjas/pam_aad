@@ -18,7 +18,7 @@ sudo make install
 Edit ```/etc/pam.d/sshd``` with your favorite text editor and add the following line at the top:
 
 ```mustache
-auth required aad.so client_id={{client_id}} tenant={{tenant}} required_group_id={{required_group_id}}
+auth required pam_aad.so client_id={{client_id}} tenant={{tenant}} required_group_id={{required_group_id}}
 ``` 
 
 ## Module options
