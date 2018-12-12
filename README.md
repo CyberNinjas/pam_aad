@@ -17,21 +17,26 @@ sudo make install
 
 Edit ```/etc/pam.d/sshd``` with your favorite text editor and add the following line at the top:
 
-```auth required aad.so client_id=yourid resource_id=resourceid tenant=YourOffice365Tenant required_group_id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx``` 
+```mustache
+auth required aad.so client_id={{client_id}} tenant={{tenant}} required_group_id={{required_group_id}}
+``` 
 
 ## Module options
 
 ### client_id
 
-This is the id of your application. Once you have create an application through apps.dev.microsoft.com. When you create your app through your Azure portal you will recieve a code in the form of xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx 
+This is the id of your application. Once you have create an application through <https://portal.azure.com>.
+When you create your app through your Azure portal you will recieve a code in the form of 
+`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
 
 ### tenant
 
-Your organization. [xxxxxx].onmicrosoft.com, where [xxxxxx] is replaced by your 0365 organization name. 
+Your organization. `[xxxxxx].onmicrosoft.com`, where `[xxxxxx]` is replaced by your 0365 organization name. 
 
 ### required_group_id
 
-Checks if the user authenticating to the application is part of the group specified. This allows you to restrict access to certain machines to specific members of your organization.
+Checks if the user authenticating to the application is part of the group specified. This allows you to 
+restrict access to certain machines to specific members of your organization.
 
 ### Current behavior
 
