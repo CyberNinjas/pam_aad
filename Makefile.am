@@ -29,5 +29,6 @@ super-clean: maintainer-clean
 	rm -fr libtool install-sh *~ Makefile aclocal.m4 config.h.in ltmain.sh
 	rm -fr Makefile.in
 
-install-data-hook:
-	rm -f $(moduledir)/pam_aad.la
+install-exec-hook:
+	rm -f $(DESTDIR)$(libdir)/pam_aad.la
+	chmod -x $(DESTDIR)$(libdir)/pam_aad.so
