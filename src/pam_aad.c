@@ -27,7 +27,6 @@
 
 #define MODULE_NAME "pam_azure_authenticator"
 #define CODE_PROMPT "Enter the following code at https://aka.ms/devicelogin : "
-#define RESOURCE_ID "00000002-0000-0000-c000-000000000000"
 
 typedef struct Params {
     int               echocode;
@@ -199,7 +198,7 @@ static int azure_authenticator(pam_handle_t *pamh, int flags,
   }
 
   username = get_user_name(pamh, &params);
-  int auth = request_azure_auth(pamh, params.echocode, RESOURCE_ID, params.client_id, params.tenant, token_buf);
+  int auth = request_azure_auth(pamh, params.echocode, params.resource_id, params.client_id, params.tenant, token_buf);
   if (auth == 0 && azure_token_user_match(username, token_buf) == 0){
       rc = PAM_SUCCESS;
   }
