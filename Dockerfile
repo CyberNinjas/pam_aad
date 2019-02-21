@@ -1,11 +1,27 @@
-FROM ubuntu:18.04
+FROM debian:9.7
 
-WORKDIR /usr/src/cyberninjas/pam_aad
-COPY . /usr/src/cyberninjas/pam_aad
+RUN apt update && apt install -y \
+        automake \
+        build-essential \
+        cmake \
+        git \
+        libjansson-dev \
+        libpam0g-dev \
+        libssl-dev \
+        libtool \
+        pkg-config
 
-RUN apt update && apt upgrade -y && \
-    apt install -y automake libjwt-dev build-essential libpam0g-dev libssl-dev libtool
+WORKDIR /tmp
+RUN git clone https://github.com/benmcollins/libjwt && \
+    cd libjwt && git checkout tags/v1.10.1 && \
+    autoreconf -i && ./configure && make && make install
 
-RUN autoreconf --install && \
-    ./configure && \
-    make
+WORKDIR /tmp
+RUN git clone https://github.com/DaveGamble/cJSON && \
+    cd cJSON && git checkout tags/v1.7.10 && \
+    mkdir build && cd build && cmake .. && make && make install
+
+WORKDIR /usr/src/pam_aad
+COPY . /usr/src/pam_aad
+
+RUN ./bootstrap.sh && ./configure && make

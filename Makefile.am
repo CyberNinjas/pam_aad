@@ -9,17 +9,8 @@ libdir = $(PAMDIR)
 
 lib_LTLIBRARIES= pam_aad.la
 
-pam_aad_la_SOURCES = src/pam_aad.c
-
-CORE_SRC = 
-CORE_SRC += src/rest.c src/rest.h
-CORE_SRC += src/cJSON.c src/cJSON.h
-CORE_SRC += src/utils.c src/utils.h
-CORE_SRC += src/jwt.c src/jwt.h
-
-pam_aad_la_SOURCES  += $(CORE_SRC)
-
-pam_aad_la_LIBADD = -lpam -lssl -lcrypto -lm -ljwt
+pam_aad_la_SOURCES = src/pam_aad.c src/jwt.c src/rest.c src/utils.c
+pam_aad_la_LIBADD = -lcjson -lcrypto -ljwt -lm -lpam -lssl
 pam_aad_la_CFLAGS = $(AM_CFLAGS)
 pam_aad_la_LDFLAGS = $(AM_LDFLAGS) $(MODULES_LDFLAGS) -export-symbols-regex "^pam_sm_"
 
@@ -31,4 +22,3 @@ super-clean: maintainer-clean
 
 install-exec-hook:
 	rm -f $(DESTDIR)$(libdir)/pam_aad.la
-	chmod -x $(DESTDIR)$(libdir)/pam_aad.so
