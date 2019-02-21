@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 dist_doc_data = README.md
 
-AM_LDFLAGS = -Wl,-x -Wl,--strip-debug -Wl,--build-id=none -no-undefined
+AM_LDFLAGS = -Wl,--strip-debug -Wl,--build-id=none -no-undefined
 MODULES_LDFLAGS = -fPIC -fno-stack-protector -avoid-version -module -shared -export-dynamic
 
 libdir = $(PAMDIR)
