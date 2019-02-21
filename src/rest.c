@@ -241,8 +241,6 @@ int read_code_from_microsoft(const char *client_id,
     strcpy(post_buf, "resource=00000002-0000-0000-c000-000000000000");
     strcat(post_buf, "&client_id=");
     strcat(post_buf, client_id);
-    strcat(post_buf, "&client_request_id=");
-    strcat(post_buf, "5929459294929");
     strcat(post_buf, "&scope=profile");
 
     /* Data to create a HTTP request */
