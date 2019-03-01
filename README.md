@@ -8,7 +8,7 @@ _This PAM module aims to provide Azure Active Directory login to Linux over SSH.
 
 ```
 ./bootstrap.sh
-./configure
+./configure --with-pam-dir=/lib/x86_64-linux-gnu/security/
 make
 sudo make install
 ```
@@ -18,8 +18,21 @@ sudo make install
 Edit ```/etc/pam.d/sshd``` with your favorite text editor and add the following line at the top:
 
 ```mustache
-auth required pam_aad.so client_id={{client_id}} tenant={{tenant}} required_group_id={{required_group_id}}
+auth required pam_aad.so
 ``` 
+
+### Configuration File
+
+Create the file ```/etc/pam.conf``` and fill it with:
+```
+{ 
+  "client": {
+      "id": "<client_id_here">
+   },
+   "domain": "<@mycompany.com>",
+   "tenant": "<mycompany.onmicrosoft.com>"
+}
+```
 
 ## Module options
 
@@ -41,10 +54,9 @@ restrict access to certain machines to specific members of your organization.
 ### Current behavior
 
 ```
-login as: captain@digipirates.onmicrosoft
-Using keyboard-interactive authentication.
+ssh me@host
 Enter the following code at https://aka.ms/devicelogin : B8EYXPJQF
-Please hit enter after you have logged in.
+Please hit enter to begin polling...
 
 The programs included with the Debian GNU/Linux system are free software;
 the exact distribution terms for each program are described in the

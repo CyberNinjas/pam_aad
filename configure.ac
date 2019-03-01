@@ -51,7 +51,6 @@ AC_CHECK_HEADER_STDBOOL
 AC_TYPE_SIZE_T
 
 dnl Checks for library functions.
-AC_FUNC_MALLOC
 AC_CHECK_FUNCS([floor memset pow strchr strdup strstr])
 
 AC_CONFIG_FILES([Makefile])
