@@ -1,3 +1,4 @@
+#include <cjson/cJSON.h>
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>
 
@@ -37,14 +38,19 @@ typedef struct Params {
 } Params;
 
 int azure_token_validate(char *raw_token);
+int fill_json_buffer(char *json_buf, char *raw_response, int *start,
+		     int *end);
+int find_json_bounds(char *json_buf, int *start, int *end);
+int get_microsoft_graph_groups(char *user_object_id, char *response_buf,
+			       char *token, const char *tenant,
+			       const char *group_object_id);
+int get_microsoft_graph_userprofile(char *token, char *response_buf,
+				    const char *tenant);
 int jwt_username_matches(char *raw_token, const char *claimed_username);
-int request_azure_oauth_token(char *code, const char *client_id,
-			      char *token_buf);
-int request_azure_signin_code(char *user_code, const char *client_id,
-			      const char *tenant, char *device_code);
-int request_azure_group_membership(char *token,
-				   const char *required_group_id,
-				   const char *tenant);
+int poll_microsoft_for_token(char *code, const char *client_id,
+			     char *response_buf);
+int read_code_from_microsoft(const char *client_id, const char *tenant,
+			     char *response_buf);
 
 static void log_message(int priority, pam_handle_t * pamh,
 			const char *format, ...)
@@ -118,37 +124,129 @@ int azure_token_user_match(const char *claimed_username, char *token)
     return jwt_username_matches(token, claimed_username);
 }
 
-static int *request_token(char *user_code, const char *client_id,
-			  char *token_buf)
+/*
+ * Function: request_token
+ * -----------------------------------
+ * *code: char array containing the device code used in the user's prompt.
+ *
+ * *client_id: char array containing the client id 
+ */
+
+int request_token(char *code, const char *client_id, char *token_buf)
 {
-    request_azure_oauth_token(user_code, client_id, token_buf);
-    return 0;
+    int start, end;
+    char response_buf[9000];
+    char json_buf[9000];
+    cJSON *json, *access_token;
+    poll_microsoft_for_token(code, client_id, response_buf);
+    find_json_bounds(response_buf, &start, &end);
+    fill_json_buffer(json_buf, response_buf, &start, &end);
+    json = cJSON_Parse(json_buf);
+    access_token = cJSON_GetObjectItem(json, "access_token");
+    if (access_token == NULL) {
+	/* Something failed. */
+	strcpy(token_buf, "FAILURE");
+	return EXIT_FAILURE;
+    }
+    strcpy(token_buf,
+	   cJSON_GetObjectItem(json, "access_token")->valuestring);
+    return EXIT_SUCCESS;
+}
+
+static int parse_user_groups(char *response_buf,
+			     cJSON * group_membership_value)
+{
+    char json_buf[4000];
+    int start, end;
+    cJSON *json;
+    strcat(response_buf, "\0");
+    find_json_bounds(response_buf, &start, &end);
+    fill_json_buffer(json_buf, response_buf, &start, &end);
+    json = cJSON_Parse(json_buf);
+    if (json == NULL) {
+	return EXIT_FAILURE;
+    }
+    int checkval = cJSON_GetObjectItem(json, "value")->type;
+    return checkval;
+}
+
+
+static int parse_user_object_id(char *response_buf,
+				char *user_object_id_buf)
+{
+    char json_buf[4000];
+    int start, end;
+    cJSON *json;
+
+    find_json_bounds(response_buf, &start, &end);
+
+    fill_json_buffer(json_buf, response_buf, &start, &end);
+    json = cJSON_Parse(json_buf);
+    cJSON *object = cJSON_GetObjectItem(json, "objectId");
+    if (object == NULL) {
+	/* Something failed. */
+	printf("Something failed.\n");
+	return EXIT_FAILURE;
+    }
+    strcpy(user_object_id_buf,
+	   cJSON_GetObjectItem(json, "objectId")->valuestring);
+
+    return EXIT_SUCCESS;
 }
 
 /*
  * Function: *request_code
- *-------------------------
- * client_id: contains client id of application as registered with Azure. 
+ *-----------------------------------
+ * *code: character buffer that will have the code inside of it by the function's end.
+ *
+ * *client_id: contains client id of application as registered with Azure.
+ *
+ * *tenant: the MS tenant. 
  * 
- * tenant: the MS tenant. 
- *
- * returns: 0 if the function completes successfully.
- *
+ * TODO: Improve checking if this function succeeded. Should be some more error 
+ * handling and there will need to be some way to log failures. 
 */
-
-static int *request_code(char *code_buf, const char *client_id,
-			 const char *tenant, char *device_code)
+static int request_code(char *user_code, const char *client_id,
+			const char *tenant, char *device_code)
 {
-    request_azure_signin_code(code_buf, client_id, tenant, device_code);
-    return 0;
+    char response_buf[2048];
+    char json_buf[2048];
+    cJSON *json;
+    int start, end;
+
+    read_code_from_microsoft(client_id, tenant, response_buf);
+    find_json_bounds(response_buf, &start, &end);
+    fill_json_buffer(json_buf, response_buf, &start, &end);
+    json = cJSON_Parse(json_buf);
+    strcpy(user_code, cJSON_GetObjectItem(json, "user_code")->valuestring);
+    strcpy(device_code,
+	   cJSON_GetObjectItem(json, "device_code")->valuestring);
+    if (user_code[0] == '\0' || device_code[0] == '\0') {
+	/* string is empty, we have failed somewhere */
+	return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 }
 
 static int azure_user_in_group(char *token,
 			       const char *required_group_id,
 			       const char *tenant)
 {
-    return request_azure_group_membership(token, required_group_id,
-					  tenant);
+//    int success = 2;
+    char user_profile_buf[1000];
+    char user_object_id_buf[100];
+    char raw_group_buf[10000];
+//    cJSON *group_membership_value; 
+
+    get_microsoft_graph_userprofile(token, user_profile_buf, tenant);
+    parse_user_object_id(user_profile_buf, user_object_id_buf);
+    get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, token,
+			       tenant, required_group_id);
+//     int is_in_group = parse_user_groups(raw_group_buf, group_membership_value);
+//     if(is_in_group == success){
+//         return EXIT_SUCCESS;
+//     }
+    return EXIT_FAILURE;
 }
 
 int request_azure_auth(pam_handle_t * pamh, int echocode,
@@ -170,9 +268,9 @@ int request_azure_auth(pam_handle_t * pamh, int echocode,
     int retval = converse(pamh, 1, &msgs, &resp);
     request_token(device_code, client_id, token_buf);
     if (azure_token_validate(token_buf) == 0) {
-	return 0;
+	return EXIT_SUCCESS;
     }
-    return 1;
+    return EXIT_FAILURE;
 }
 
 static int parse_args(pam_handle_t * pamh, int argc, const char **argv,
@@ -191,25 +289,23 @@ static int parse_args(pam_handle_t * pamh, int argc, const char **argv,
 	} else {
 	    log_message(LOG_ERR, pamh, "Unrecognized option \"%s\"",
 			argv[i]);
-	    return -1;
+	    return EXIT_FAILURE;
 	}
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 
-static int azure_authenticator(pam_handle_t * pamh, int flags,
-			       int argc, const char **argv)
+PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
+				   int argc, const char **argv)
 {
-    int rc = PAM_AUTH_ERR;
     const char *username;
     int valid_token;
     char token_buf[3000];
-    int ret;
 
     Params params = { 0 };
     params.allowed_perm = 0600;
     if (parse_args(pamh, argc, argv, &params) < 0) {
-	return rc;
+	return PAM_AUTH_ERR;
     }
 
     username = get_user_name(pamh, &params);
@@ -217,15 +313,9 @@ static int azure_authenticator(pam_handle_t * pamh, int flags,
 				  params.client_id, params.tenant,
 				  token_buf);
     if (auth == 0 && azure_token_user_match(username, token_buf) == 0) {
-	rc = PAM_SUCCESS;
+	return PAM_AUTH_ERR;
     }
-    return rc;
-}
-
-PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
-				   int argc, const char **argv)
-{
-    return azure_authenticator(pamh, flags, argc, argv);
+    return PAM_SUCCESS;
 }
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t * pamh, int flags, int argc,
