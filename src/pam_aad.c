@@ -178,7 +178,7 @@ static int parse_user_object_id(char *response_buf,
     int start, end;
     cJSON *json;
 
-    find_json_bounds(response_buf, &start, &end);
+    find_json_bounds(response_buf, &start, &end);*
 
     fill_json_buffer(json_buf, response_buf, &start, &end);
     json = cJSON_Parse(json_buf);
