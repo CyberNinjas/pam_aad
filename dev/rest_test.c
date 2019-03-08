@@ -1,5 +1,4 @@
-// too lazy to add usage /rest <client-id> <tenant> <username> <domain>
-
+// too lazy to add usage /rest <username>
 #include <curl/curl.h>
 #include <jansson.h>
 #include <jwt.h>
@@ -7,20 +6,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define AUTH_ERROR "authorization_pending"
 #define CONFIG_FILE "/etc/pam-test.conf"
 #define HOST "https://login.microsoftonline.com/"
 #define RESOURCE_ID "00000002-0000-0000-c000-000000000000"
+#define TTW 5
 #define USER_AGENT "azure_authenticator_pam/1.0"
 
+
+//struct && debugging 18-121
 struct response 
 {
 	char *data;
 	size_t size;
 };
 
-//struct && debugginig 24-121
 struct ret_data
 {
 	const char *u_code, *d_code, *auth_bearer;
@@ -182,9 +184,13 @@ static char *auth_bearer_request(struct ret_data *data, const char *client_id,
 	post_body = sdscat(post_body, client_id);
 	post_body = sdscat(post_body, "&grant_type=device_code");
 	
-	for(;;){
-		json_data = curl(endpoint, post_body, NULL);
+	for(;;) {
 
+		nanosleep((const struct timespec[]){{TTW, 0}}, NULL);
+		json_data = curl(endpoint, post_body, NULL);
+		
+		//printf("1\n");
+		
 		if (json_object_get(json_data, "access_token") != NULL){
 			auth_bearer = json_string_value(json_object_get(json_data, 
 									"access_token"));
@@ -310,13 +316,14 @@ int main(int argc, char *argv[])
 	jwt_decode(&jwt, ab_token, NULL, 0);
 
 	if (verify_user(jwt, user, domain) == 0) {
-			printf("Username supplied matches UPN! Sucess!\n");
+			printf("Username supplied matches UPN! Success!\n");
 	} else {
 			printf("Imposter detected! Failure!\n");
 	}
 	
 
 	json_decref(json_data);
+	json_decref(config);
 	jwt_free(jwt);
 	return 0;
 }
