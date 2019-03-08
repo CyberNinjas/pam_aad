@@ -9,10 +9,9 @@
 #include <string.h>
 
 #define AUTH_ERROR "authorization_pending"
-#define CLIENT_ID ""
+#define CONFIG_FILE "/etc/pam-test.conf"
 #define HOST "https://login.microsoftonline.com/"
 #define RESOURCE_ID "00000002-0000-0000-c000-000000000000"
-#define TENANT ""
 #define USER_AGENT "azure_authenticator_pam/1.0"
 
 struct response 
@@ -21,7 +20,7 @@ struct response
 	size_t size;
 };
 
-//struct && debugging 22-118
+//struct && debugginig 24-121
 struct ret_data
 {
 	const char *u_code, *d_code, *auth_bearer;
@@ -120,7 +119,9 @@ static size_t response_callback(void *contents, size_t size, size_t nmemb,
 	return realsize;
 }
 
-static json_t *curl(const char *endpoint, const char *post_body, const char *headers)
+
+static json_t *curl(const char *endpoint, const char *post_body, 
+					const char *headers)
 {
 	CURL *curl_handle;
 	CURLcode res;
@@ -147,7 +148,8 @@ static json_t *curl(const char *endpoint, const char *post_body, const char *hea
 	res = curl_easy_perform(curl_handle);
 	
 	if (res != CURLE_OK) {
-		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+		fprintf(stderr, "curl_easy_perform() failed: %s\n", 
+						curl_easy_strerror(res));
 	} else {
 			data = json_loads(resp.data, 0, &error);
 
@@ -165,7 +167,8 @@ static json_t *curl(const char *endpoint, const char *post_body, const char *hea
 }
 
 static char *auth_bearer_request(struct ret_data *data, const char *client_id,
-								 const char *tenant, const char *code, json_t *json_data)
+								 const char *tenant, const char *code, 
+								 json_t *json_data)
 {
 	const char *auth_bearer;
 
@@ -183,9 +186,11 @@ static char *auth_bearer_request(struct ret_data *data, const char *client_id,
 		json_data = curl(endpoint, post_body, NULL);
 
 		if (json_object_get(json_data, "access_token") != NULL){
-			auth_bearer = json_string_value(json_object_get(json_data, "access_token"));
+			auth_bearer = json_string_value(json_object_get(json_data, 
+									"access_token"));
 		} else {
-			auth_bearer = json_string_value(json_object_get(json_data, "error"));
+			auth_bearer = json_string_value(json_object_get(json_data, 
+									"error"));
 		}
 		if (strcmp(auth_bearer, AUTH_ERROR) != 0)
 				break;
@@ -218,7 +223,8 @@ void *oauth_request(struct ret_data *data, const char *client_id,
 		d_code = json_string_value(json_object_get(json_data, "device_code"));
 		u_code = json_string_value(json_object_get(json_data, "user_code"));
 	} else {
-		fprintf(stderr, "json_object_get() failed: device_code & user_code NULL\n");
+		fprintf(stderr, 
+				"json_object_get() failed: device_code & user_code NULL\n");
 
 		return NULL;
 	}
@@ -251,14 +257,43 @@ int main(int argc, char *argv[])
 {
 
 	jwt_t *jwt;
-	const char *client = argv[1], 
-		  		*ten = argv[2],
-			   	*user = argv[3],
-				*domain = argv[4],
-				*u_code, *d_code, *ab_token;
-
+	const char *user = argv[1],
+		   	*client, *ten, *domain,
+		   	*u_code, *d_code, *ab_token;
 	struct ret_data data;
-	json_t *json_data;
+	json_t *json_data, *config; 
+	json_error_t error;
+
+	config = json_load_file(CONFIG_FILE, 0, &error);
+	if (!config) {
+		fprintf(stderr, "error: on line %d: %s\n", 
+						error.line, error.text);
+		return 1;
+	}
+
+	if (json_object_get(
+		json_object_get(config, "client"), "id") != NULL) {
+		client = json_string_value(
+						json_object_get(
+								json_object_get(config, "client"), "id"));
+	} else {
+		printf("Error with Id in JSON.\n");
+		return 0;
+	}
+
+	if (json_object_get(config, "domain") != NULL) {
+		domain = json_string_value(json_object_get(config, "domain"));
+	} else {
+		printf("Error with Domain in JSON.\n");
+	   return 0;	
+	}
+
+	if (json_object_get(config, "tenant") != NULL) {
+		ten = json_string_value(json_object_get(config, "tenant"));
+	} else {
+		printf("Error with Tenant in JSON.\n");
+		return 0;
+	}
 
 	printf("Pam Auth Test\n");
 
