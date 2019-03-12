@@ -9,14 +9,10 @@
 #include <string.h>
 #include <time.h>
 
-#define PAM_SM_AUTH
-#define PAM_CONST const 
-
 #define AUTH_ERROR "authorization_pending"
 #define CODE_PROMPT "Enter the following code at https://aka.ms/devicelogin: "
 #define CONFIG_FILE "/etc/pam-test.conf"
 #define HOST "https://login.microsoftonline.com/"
-#define MODULE_NAME "pam_azure_authenticator"
 #define RESOURCE_ID "00000002-0000-0000-c000-000000000000"
 #define TTW 5
 #define USER_AGENT "azure_authenticator_pam/1.0"
@@ -139,7 +135,7 @@ static char *auth_bearer_request(struct ret_data *data, const char *client_id,
 	data->auth_bearer = auth_bearer;
 }
 
-void *oauth_request(struct ret_data *data, const char *client_id,
+static char *oauth_request(struct ret_data *data, const char *client_id,
 			const char *tenant, json_t *json_data)
 {
 	const char *d_code, *u_code;
@@ -155,16 +151,13 @@ void *oauth_request(struct ret_data *data, const char *client_id,
 
 	json_data = curl(endpoint, post_body, NULL);
 
-	if (json_object_get(json_data, "device_code") && 
-		json_object_get(json_data, "user_code")) {
-		d_code = json_string_value(
-				json_object_get(json_data, "device_code"));
-		u_code = json_string_value(
-				json_object_get(json_data, "user_code"));
+	if (json_object_get(json_data, "device_code") && json_object_get(json_data, "user_code")) {
+		d_code = json_string_value(json_object_get(json_data, "device_code"));
+		u_code = json_string_value(json_object_get(json_data, "user_code"));
 	} else { 
 		fprintf(stderr, "json_object_get() failed: device_code & user_code NULL\n");
 		
-		return NULL;
+		//return NULL;
 	}
 
 	data->d_code = d_code;
@@ -188,7 +181,7 @@ static int *verify_user(jwt_t *jwt, const char *user,
 		return (int *) 1;
 	}
 }
-     
+
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, 
 					int argc, const char **argv)
@@ -208,34 +201,14 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags,
 }
 
 
+PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags,
+				int argc, const char **argv)
+{
+	return PAM_SUCCESS;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags,
+				int argc, const char **argv)
+{
+	return PAM_SUCCESS;
+}

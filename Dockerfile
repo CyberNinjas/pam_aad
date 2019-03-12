@@ -39,3 +39,5 @@ WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
 
 RUN ./bootstrap.sh && ./configure --with-pam-dir=/lib/x86_64-linux-gnu/security && make && make install
+
+RUN useradd test && ldconfig
