@@ -10,17 +10,17 @@ RUN apt update && apt install -y \
 	libpam0g-dev \
         libssl-dev \
         libtool \
-        pkg-config
+	pamtester \
+        pkg-config \
+	openssh-server \
+	syslog-ng \
+	vim	
+
 
 WORKDIR /tmp
 RUN git clone https://github.com/benmcollins/libjwt && \
     cd libjwt && git checkout tags/v1.10.1 && \
     autoreconf -i && ./configure && make && make install
-
-WORKDIR /tmp
-RUN git clone https://github.com/DaveGamble/cJSON && \
-    cd cJSON && git checkout tags/v1.7.10 && \
-    mkdir build && cd build && cmake .. && make && make install
 
 # See: https://github.com/antirez/sds/issues/97
 WORKDIR /tmp
@@ -38,4 +38,4 @@ RUN git clone https://github.com/antirez/sds libsds && \
 WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
 
-RUN ./bootstrap.sh && ./configure && make
+RUN ./bootstrap.sh && ./configure --with-pam-dir=/lib/x86_64-linux-gnu/security && make && make install

@@ -2,15 +2,16 @@ ACLOCAL_AMFLAGS = -I m4
 
 dist_doc_data = README.md
 
-AM_LDFLAGS = -Wl,--strip-debug -Wl,--build-id=none -no-undefined
-MODULES_LDFLAGS = -fPIC -fno-stack-protector -avoid-version -module -shared -export-dynamic
+#AM_LDFLAGS = -Wl,--strip-debug -Wl,--build-id=none -no-undefined
+MODULES_LDFLAGS = -fPIC -fno-stack-protector -avoid-version -module -shared \
+		 -export-dynamic -Wall -Wextra -Werror -ggdb
 
 libdir = $(PAMDIR)
 
 lib_LTLIBRARIES= pam_aad.la
 
-pam_aad_la_SOURCES = src/pam_aad.c src/rest.c src/utils.c
-pam_aad_la_LIBADD = -lcjson -lcrypto -ljwt -lm -lpam -lssl
+pam_aad_la_SOURCES = dev/pam_basic.c
+pam_aad_la_LIBADD = -ljwt -lpam -ljansson -lsds -lm
 pam_aad_la_CFLAGS = $(AM_CFLAGS)
 pam_aad_la_LDFLAGS = $(AM_LDFLAGS) $(MODULES_LDFLAGS) -export-symbols-regex "^pam_sm_"
 
