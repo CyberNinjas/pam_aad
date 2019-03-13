@@ -1,331 +1,304 @@
-#include <cjson/cJSON.h>
+#include <curl/curl.h>
+#include <jansson.h>
+#include <jwt.h>
+#include <sds/sds.h>
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>
-
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
+#include <time.h>
 
-#define PAM_SM_AUTH
-#define PAM_SM_ACCOUNT
+#define AUTH_ERROR "authorization_pending"
+#define CODE_PROMPT "Enter the following code at https://aka.ms/devicelogin: "
+#define CONFIG_FILE "/etc/pam-test.conf"
+#define HOST "https://login.microsoftonline.com/"
+#define RESOURCE_ID "00000002-0000-0000-c000-000000000000"
+#define TTW 5
+#define USER_AGENT "azure_authenticator_pam/1.0"
 
-#ifndef PAM_EXTERN
-#define PAM_EXTERN
-#endif
-
-#if !defined(LOG_AUTHPRIV) && defined(LOG_AUTH)
-#define LOG_AUTHPRIV LOG_AUTH
-#endif
-
-#ifdef sun
-#define PAM_CONST
-#else
-#define PAM_CONST const
-#endif
-
-#define MODULE_NAME "pam_azure_authenticator"
-#define CODE_PROMPT "Enter the following code at https://aka.ms/devicelogin : "
-
-typedef struct Params {
-    int echocode;
-    int allowed_perm;
-    int debug;
-    const char *tenant;
-    const char *client_id;
-    const char *required_group_id;
-} Params;
-
-int azure_token_validate(char *raw_token);
-int fill_json_buffer(char *json_buf, char *raw_response, int *start,
-		     int *end);
-int find_json_bounds(char *json_buf, int *start, int *end);
-int get_microsoft_graph_groups(char *user_object_id, char *response_buf,
-			       char *token, const char *tenant,
-			       const char *group_object_id);
-int get_microsoft_graph_userprofile(char *token, char *response_buf,
-				    const char *tenant);
-int jwt_username_matches(char *raw_token, const char *claimed_username);
-int poll_microsoft_for_token(char *code, const char *client_id,
-			     char *response_buf);
-int read_code_from_microsoft(const char *client_id, const char *tenant,
-			     char *response_buf);
-
-static void log_message(int priority, pam_handle_t * pamh,
-			const char *format, ...)
+struct response 
 {
-    char logname[80];
-    snprintf(logname, sizeof(logname), "%s(" MODULE_NAME ")");
+	char *data;
+	size_t size;
+};
 
-    va_list args;
-    va_start(args, format);
-#if !defined(DEMO) && !defined(TESTING)
-    openlog(logname, LOG_CONS | LOG_PID, LOG_AUTHPRIV);
-    vsyslog(priority, format, args);
-    closelog();
-#else
-    if (!error_msg) {
-	error_msg = strdup("");
-    }
-    {
-	char buf[1000];
-	vsnprintf(buf, sizeof buf, format, args);
-	const int newlen = strlen(error_msg) + 1 + strlen(buf) + 1;
-	char *n = malloc(newlen);
-	if (n) {
-	    snprintf(n, newlen, "%s%s%s", error_msg,
-		     strlen(error_msg) ? "\n" : "", buf);
-	    free(error_msg);
-	    error_msg = n;
-	} else {
-	    fprintf(stderr, "Failed to malloc %d bytes for log data.\n",
-		    newlen);
+struct ret_data
+{
+	const char *u_code, *d_code, *auth_bearer;
+};
+
+static size_t response_callback(void *contents, size_t size, size_t nmemb,
+				void *userp)
+{
+	size_t realsize = size * nmemb;
+	struct response *resp = (struct response *)userp;
+	char *ptr = realloc(resp->data, resp->size + realsize + 1);
+	if (ptr == NULL) {
+		// Out of memory
+		printf("Not enough memory (realloc returned NULL)\n");
+
+		return 0;
 	}
-    }
-#endif
 
-    va_end(args);
+	resp->data = ptr;
+	memcpy(&(resp->data[resp->size]), contents, realsize);
+	resp->size += realsize;
+	resp->data[resp->size] = 0;
+
+	return realsize;
 }
 
-static int converse(pam_handle_t * pamh, int nargs,
-		    PAM_CONST struct pam_message **message,
-		    struct pam_response **response)
+static json_t *curl(const char *endpoint, const char *post_body,
+			const char *headers)
 {
-    struct pam_conv *conv;
-    int retval = pam_get_item(pamh, PAM_CONV, (void *) &conv);
-    if (retval != PAM_SUCCESS) {
-	return retval;
-    }
-    return conv->conv(nargs, message, response, conv->appdata_ptr);
-}
+	CURL *curl;
+	CURLcode res;
+	json_t *data;
+	json_error_t error;
 
-static const char *get_user_name(pam_handle_t * pamh,
-				 const Params * params)
-{
-    //Obtain user's name 
-    const char *username;
-    if (pam_get_user(pamh, &username, NULL) != PAM_SUCCESS ||
-	!username || !*username) {
-	log_message(LOG_ERR, pamh,
-		    "pam_get_user() failed to get a user name");
-	return NULL;
-    }
-    if (params->debug) {
-	log_message(LOG_INFO, pamh,
-		    "debug: start of azure_authenticator for %s",
-		    username);
-    }
-    return username;
-}
+	struct response resp;
 
-int azure_token_user_match(const char *claimed_username, char *token)
-{
-    return jwt_username_matches(token, claimed_username);
-}
+	resp.data = malloc(1);
+	resp.size = 0;
 
-/*
- * Function: request_token
- * -----------------------------------
- * *code: char array containing the device code used in the user's prompt.
- *
- * *client_id: char array containing the client id 
- */
+	curl = curl_easy_init();
+	curl_easy_setopt(curl, CURLOPT_URL, endpoint);
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_body);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, response_callback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &resp);
+	curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1L);
+	if (headers)
+		curl_easy_setopt(curl, CURLOPT_HEADER, headers);
 
-int request_token(char *code, const char *client_id, char *token_buf)
-{
-    int start, end;
-    char response_buf[9000];
-    char json_buf[9000];
-    cJSON *json, *access_token;
-    poll_microsoft_for_token(code, client_id, response_buf);
-    find_json_bounds(response_buf, &start, &end);
-    fill_json_buffer(json_buf, response_buf, &start, &end);
-    json = cJSON_Parse(json_buf);
-    access_token = cJSON_GetObjectItem(json, "access_token");
-    if (access_token == NULL) {
-	/* Something failed. */
-	strcpy(token_buf, "FAILURE");
-	return EXIT_FAILURE;
-    }
-    strcpy(token_buf,
-	   cJSON_GetObjectItem(json, "access_token")->valuestring);
-    return EXIT_SUCCESS;
-}
+	//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+	
+	res = curl_easy_perform(curl);
 
-static int parse_user_groups(char *response_buf,
-			     cJSON * group_membership_value)
-{
-    char json_buf[4000];
-    int start, end;
-    cJSON *json;
-    strcat(response_buf, "\0");
-    find_json_bounds(response_buf, &start, &end);
-    fill_json_buffer(json_buf, response_buf, &start, &end);
-    json = cJSON_Parse(json_buf);
-    if (json == NULL) {
-	return EXIT_FAILURE;
-    }
-    int checkval = cJSON_GetObjectItem(json, "value")->type;
-    return checkval;
-}
-
-
-static int parse_user_object_id(char *response_buf,
-				char *user_object_id_buf)
-{
-    char json_buf[4000];
-    int start, end;
-    cJSON *json;
-
-    find_json_bounds(response_buf, &start, &end);*
-
-    fill_json_buffer(json_buf, response_buf, &start, &end);
-    json = cJSON_Parse(json_buf);
-    cJSON *object = cJSON_GetObjectItem(json, "objectId");
-    if (object == NULL) {
-	/* Something failed. */
-	printf("Something failed.\n");
-	return EXIT_FAILURE;
-    }
-    strcpy(user_object_id_buf,
-	   cJSON_GetObjectItem(json, "objectId")->valuestring);
-
-    return EXIT_SUCCESS;
-}
-
-/*
- * Function: *request_code
- *-----------------------------------
- * *code: character buffer that will have the code inside of it by the function's end.
- *
- * *client_id: contains client id of application as registered with Azure.
- *
- * *tenant: the MS tenant. 
- * 
- * TODO: Improve checking if this function succeeded. Should be some more error 
- * handling and there will need to be some way to log failures. 
-*/
-static int request_code(char *user_code, const char *client_id,
-			const char *tenant, char *device_code)
-{
-    char response_buf[2048];
-    char json_buf[2048];
-    cJSON *json;
-    int start, end;
-
-    read_code_from_microsoft(client_id, tenant, response_buf);
-    find_json_bounds(response_buf, &start, &end);
-    fill_json_buffer(json_buf, response_buf, &start, &end);
-    json = cJSON_Parse(json_buf);
-    strcpy(user_code, cJSON_GetObjectItem(json, "user_code")->valuestring);
-    strcpy(device_code,
-	   cJSON_GetObjectItem(json, "device_code")->valuestring);
-    if (user_code[0] == '\0' || device_code[0] == '\0') {
-	/* string is empty, we have failed somewhere */
-	return EXIT_FAILURE;
-    }
-    return EXIT_SUCCESS;
-}
-
-static int azure_user_in_group(char *token,
-			       const char *required_group_id,
-			       const char *tenant)
-{
-//    int success = 2;
-    char user_profile_buf[1000];
-    char user_object_id_buf[100];
-    char raw_group_buf[10000];
-//    cJSON *group_membership_value; 
-
-    get_microsoft_graph_userprofile(token, user_profile_buf, tenant);
-    parse_user_object_id(user_profile_buf, user_object_id_buf);
-    get_microsoft_graph_groups(user_object_id_buf, raw_group_buf, token,
-			       tenant, required_group_id);
-//     int is_in_group = parse_user_groups(raw_group_buf, group_membership_value);
-//     if(is_in_group == success){
-//         return EXIT_SUCCESS;
-//     }
-    return EXIT_FAILURE;
-}
-
-int request_azure_auth(pam_handle_t * pamh, int echocode,
-		       const char *client_id, const char *tenant,
-		       char *token_buf)
-{
-    char prompt[1000], code[1000], code_buf[1000], device_code[10000];
-    strcpy(prompt, CODE_PROMPT);
-    request_code(code_buf, client_id, tenant, device_code);
-    strcpy(code, code_buf);
-    strcat(prompt, code);
-    strcat(prompt, "\nPlease hit enter after you have logged in.");
-    PAM_CONST char *message = prompt;
-    PAM_CONST struct pam_message msg = {.msg_style = echocode,
-	.msg = message
-    };
-    PAM_CONST struct pam_message *msgs = &msg;
-    struct pam_response *resp = NULL;
-    int retval = converse(pamh, 1, &msgs, &resp);
-    request_token(device_code, client_id, token_buf);
-    if (azure_token_validate(token_buf) == 0) {
-	return EXIT_SUCCESS;
-    }
-    return EXIT_FAILURE;
-}
-
-static int parse_args(pam_handle_t * pamh, int argc, const char **argv,
-		      Params * params)
-{
-    params->debug = 1;
-    params->echocode = PAM_PROMPT_ECHO_ON;
-    int i;
-    for (i = 0; i < argc; ++i) {
-	if (!memcmp(argv[i], "client_id=", 10)) {
-	    params->client_id = argv[i] + 10;
-	} else if (!memcmp(argv[i], "tenant=", 7)) {
-	    params->tenant = argv[i] + 7;
-	} else if (!memcmp(argv[i], "required_group_id=", 18)) {
-	    params->required_group_id = argv[i] + 18;
+	if (res != CURLE_OK){
+		fprintf(stderr, "curl_easy_perform() failed: %s\n", 
+				curl_easy_strerror(res));
 	} else {
-	    log_message(LOG_ERR, pamh, "Unrecognized option \"%s\"",
-			argv[i]);
-	    return EXIT_FAILURE;
+		data = json_loads(resp.data, 0, &error);
+
+		if (!data) {
+			fprintf(stderr, "json_loads() failed: %s\n", error.text);
+
+			return NULL;
+		}
 	}
-    }
-    return EXIT_SUCCESS;
+
+	curl_easy_cleanup(curl);
+	free(resp.data);
+
+	return (data) ? data : NULL;
 }
 
-PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
-				   int argc, const char **argv)
+static char *auth_bearer_request(struct ret_data *data, const char *client_id,
+				const char *tenant, const char *code,
+				json_t *json_data)
 {
-    const char *username;
-    int valid_token;
-    char token_buf[3000];
+	const char *auth_bearer;
 
-    Params params = { 0 };
-    params.allowed_perm = 0600;
-    if (parse_args(pamh, argc, argv, &params) < 0) {
+	sds endpoint = sdsnew(HOST);
+	endpoint = sdscat(endpoint, "common/oauth2/token");
+
+	sds post_body = sdsnew("resource=" RESOURCE_ID);
+	post_body = sdscat(post_body, "&code=");
+	post_body = sdscat(post_body, code);
+	post_body = sdscat(post_body, "&client_id=");
+	post_body = sdscat(post_body, client_id);
+	post_body = sdscat(post_body, "&grant_type=device_code");
+	
+	for (;;) {
+		nanosleep((const struct timespec[]){{TTW, 0}}, NULL);
+		json_data = curl(endpoint, post_body, NULL);
+
+		if (json_object_get(json_data, "access_token")) {
+			auth_bearer = json_string_value(
+					json_object_get(json_data, "access_token"));
+		} else {
+			auth_bearer = json_string_value(
+					json_object_get(json_data, "error"));
+		}
+
+		if (strcmp(auth_bearer, AUTH_ERROR) != 0)
+			break;
+
+	}
+
+	sdsfree(endpoint);
+	sdsfree(post_body);
+
+	data->auth_bearer = auth_bearer;
+}
+
+static char *oauth_request(struct ret_data *data, const char *client_id,
+			const char *tenant, json_t *json_data)
+{
+	const char *d_code, *u_code;
+
+	sds endpoint = sdsnew(HOST);
+	endpoint = sdscat(endpoint, tenant);
+	endpoint = sdscat(endpoint, "/oauth2/devicecode/");
+
+	sds post_body = sdsnew("resource=" RESOURCE_ID);
+	post_body = sdscat(post_body, "&client_id=");
+	post_body = sdscat(post_body, client_id);
+	post_body = sdscat(post_body, "&scope=profile");
+
+	json_data = curl(endpoint, post_body, NULL);
+
+	if (json_object_get(json_data, "device_code") && json_object_get(json_data, "user_code")) {
+		d_code = json_string_value(json_object_get(json_data, "device_code"));
+		u_code = json_string_value(json_object_get(json_data, "user_code"));
+	} else { 
+		fprintf(stderr, "json_object_get() failed: device_code & user_code NULL\n");
+		
+		exit(1);
+	}
+
+	data->d_code = d_code;
+	data->u_code = u_code;
+
+	sdsfree(endpoint);
+	sdsfree(post_body);
+}
+
+static int *verify_user(jwt_t *jwt, const char *user,
+			const char *domain)
+{
+	const char *upn = jwt_get_grant(jwt, "upn");
+
+	sds username = sdsnew(user);
+	username = sdscat(username, domain);
+
+	if (strcmp(upn, username) == 0 ) {
+		return 0;
+	} else { 
+		return (int *) 1;
+	}
+}
+
+static int converse(pam_handle_t *pamh, int nargs,
+		const struct pam_message **message, 
+		struct pam_response **response)
+{
+	struct pam_conv *conv;
+	int retval = pam_get_item(pamh, PAM_CONV, (void *) &conv);
+	if (retval != PAM_SUCCESS) 
+		return retval;
+	return conv->conv(nargs, message, response, conv->appdata_ptr);
+}
+
+PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, 
+					int argc, const char **argv)
+{
+	jwt_t *jwt;
+
+	const char *username, *client_id, *tenant, 
+	      		*domain, *u_code, *d_code, *ab_token;
+
+	struct ret_data data;
+	json_t *json_data, *config;
+	json_error_t error;
+
+	config = json_load_file(CONFIG_FILE, 0, &error);
+	if (!config) {
+		fprintf(stderr, "error: on line %d: %s\n", error.line, error.text);
+
+		return PAM_AUTH_ERR;
+	}
+	
+	if (json_object_get(json_object_get(config, "client"), "id")) {
+		client_id = json_string_value(
+				json_object_get(json_object_get(config, "client"), "id"));
+	} else {
+		printf("Error with ID in JSON\n");
+		
+		return PAM_AUTH_ERR;
+	}
+
+	if (json_object_get(config, "domain")) {
+		domain = json_string_value(
+				json_object_get(config, "domain"));
+	} else {
+		printf("Error with Domain in JSON\n");
+
+		return PAM_AUTH_ERR;
+	}
+
+	if (json_object_get(config, "tenant")) {
+		tenant = json_string_value(
+				json_object_get(config, "tenant"));
+	} else {
+		printf("Error with tenant in JSON\n");
+
+		return PAM_AUTH_ERR;
+	}
+
+	if (pam_get_user(pamh, &username, NULL) != PAM_SUCCESS) {
+		printf("pam_get_user(): failed to get a username");
+
+		return PAM_AUTH_ERR;
+	}
+
+	oauth_request(&data, client_id, tenant, json_data);
+
+	u_code = data.u_code;
+	d_code = data.d_code;
+
+	sds prompt = sdsnew(CODE_PROMPT);
+	prompt = sdscat(prompt, u_code);
+	prompt = sdscat(prompt, "\nPress enter to begin polling...\n");
+
+	const struct pam_message msg = {
+		.msg_style = PAM_PROMPT_ECHO_OFF,
+		.msg = prompt
+	};
+	const struct pam_message *msgs = &msg;
+	struct pam_response *resp = NULL;
+
+	converse(pamh, 1, &msgs, &resp);
+
+	//printf(CODE_PROMPT "%s\n", u_code);
+	//printf("Polling until code is entered...\n");
+
+	auth_bearer_request(&data, client_id, tenant, d_code, json_data);
+	ab_token = data.auth_bearer;
+	jwt_decode(&jwt, ab_token, NULL, 0);
+
+	if (verify_user(jwt, username, domain) == 0) {
+		printf("Username supplied matches UPN! Success!\n");
+
+		json_decref(json_data);
+		json_decref(config);
+		jwt_free(jwt);
+		return PAM_SUCCESS;
+	} else {
+		printf("Imposter detected! Failure!\n");
+
+		json_decref(json_data);
+		json_decref(config);
+		jwt_free(jwt);
+		return PAM_AUTH_ERR;
+	}
+
+
 	return PAM_AUTH_ERR;
-    }
-
-    username = get_user_name(pamh, &params);
-    int auth = request_azure_auth(pamh, params.echocode,
-				  params.client_id, params.tenant,
-				  token_buf);
-    if (auth == 0 && azure_token_user_match(username, token_buf) == 0) {
-	return PAM_AUTH_ERR;
-    }
-    return PAM_SUCCESS;
 }
 
-PAM_EXTERN int pam_sm_setcred(pam_handle_t * pamh, int flags, int argc,
-			      const char **argv)
+
+PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags,
+				int argc, const char **argv)
 {
-    return PAM_SUCCESS;
+	return PAM_SUCCESS;
 }
 
-PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t * pamh, int flags, int argc,
-				const char **argv)
+PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *pamh, int flags,
+				int argc, const char **argv)
 {
-    return PAM_SUCCESS;
+	return PAM_SUCCESS;
 }

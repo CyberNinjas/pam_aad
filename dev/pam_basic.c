@@ -182,6 +182,16 @@ static int *verify_user(jwt_t *jwt, const char *user,
 	}
 }
 
+static int converse(pam_handle_t *pamh, int nargs,
+		const struct pam_message **message, 
+		struct pam_response **response)
+{
+	struct pam_conv *conv;
+	int retval = pam_get_item(pam, PAM_CONV, (void *) &conv);
+	if (retval != PAM_SUCCESS) 
+		return retval;
+	return conv->conv(nargs, message, response, conv->appdata_ptr);
+}
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, 
 					int argc, const char **argv)
@@ -240,8 +250,21 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags,
 	u_code = data.u_code;
 	d_code = data.d_code;
 
-	printf(CODE_PROMPT "%s\n", u_code);
-	printf("Polling until code is entered...\n");
+	sds prompt = sdsnew(CODE_PROMPT);
+	prompt = sdscat(prompt, u_code);
+	prompt = sdscat(prompt, "\nPress enter to begin polling...\n");
+
+	const struct pam_message msg = {
+		.msg_style = PAM_PROMPT_ECHO_OFF,
+		.msg = prompt
+	};
+	const struct pam_message *msgs = &msg;
+	struct pam_response *resp = NULL;
+
+	converse(pamh, 1, &msgs, &resp);
+
+	//printf(CODE_PROMPT "%s\n", u_code);
+	//printf("Polling until code is entered...\n");
 
 	auth_bearer_request(&data, client_id, tenant, d_code, json_data);
 	ab_token = data.auth_bearer;

@@ -10,7 +10,7 @@ libdir = $(PAMDIR)
 
 lib_LTLIBRARIES= pam_aad.la
 
-pam_aad_la_SOURCES = dev/pam_basic.c
+pam_aad_la_SOURCES = src/pam_aad.c
 pam_aad_la_LIBADD = -ljwt -lpam -ljansson -lsds -lcurl
 pam_aad_la_CFLAGS = $(AM_CFLAGS)
 pam_aad_la_LDFLAGS = $(AM_LDFLAGS) $(MODULES_LDFLAGS) -export-symbols-regex "^pam_sm_"
