@@ -41,3 +41,5 @@ COPY . /usr/src/pam_aad
 RUN ./bootstrap.sh && ./configure --with-pam-dir=/lib/x86_64-linux-gnu/security && make && make install
 
 RUN useradd test && ldconfig
+
+RUN cp /usr/src/pam_aad/pam-test.conf /etc/

@@ -157,7 +157,7 @@ static char *oauth_request(struct ret_data *data, const char *client_id,
 	} else { 
 		fprintf(stderr, "json_object_get() failed: device_code & user_code NULL\n");
 		
-		//return NULL;
+		exit(1);
 	}
 
 	data->d_code = d_code;
@@ -186,18 +186,85 @@ static int *verify_user(jwt_t *jwt, const char *user,
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, 
 					int argc, const char **argv)
 {
-	//jwt_t *jwt;
+	jwt_t *jwt;
 
-	const char *username;
+	const char *username, *client_id, *tenant, 
+	      		*domain, *u_code, *d_code, *ab_token;
+
+	struct ret_data data;
+	json_t *json_data, *config;
+	json_error_t error;
+
+	config = json_load_file(CONFIG_FILE, 0, &error);
+	if (!config) {
+		fprintf(stderr, "error: on line %d: %s\n", error.line, error.text);
+
+		return PAM_AUTH_ERR;
+	}
+	
+	if (json_object_get(json_object_get(config, "client"), "id")) {
+		client_id = json_string_value(
+				json_object_get(json_object_get(config, "client"), "id"));
+	} else {
+		printf("Error with ID in JSON\n");
+		
+		return PAM_AUTH_ERR;
+	}
+
+	if (json_object_get(config, "domain")) {
+		domain = json_string_value(
+				json_object_get(config, "domain"));
+	} else {
+		printf("Error with Domain in JSON\n");
+
+		return PAM_AUTH_ERR;
+	}
+
+	if (json_object_get(config, "tenant")) {
+		tenant = json_string_value(
+				json_object_get(config, "tenant"));
+	} else {
+		printf("Error with tenant in JSON\n");
+
+		return PAM_AUTH_ERR;
+	}
+
 	if (pam_get_user(pamh, &username, NULL) != PAM_SUCCESS) {
 		printf("pam_get_user(): failed to get a username");
 
 		return PAM_AUTH_ERR;
 	}
 
-	printf("Username Received: %s\n", username);
+	oauth_request(&data, client_id, tenant, json_data);
 
-	return PAM_SUCCESS;
+	u_code = data.u_code;
+	d_code = data.d_code;
+
+	printf(CODE_PROMPT "%s\n", u_code);
+	printf("Polling until code is entered...\n");
+
+	auth_bearer_request(&data, client_id, tenant, d_code, json_data);
+	ab_token = data.auth_bearer;
+	jwt_decode(&jwt, ab_token, NULL, 0);
+
+	if (verify_user(jwt, username, domain) == 0) {
+		printf("Username supplied matches UPN! Success!\n");
+
+		json_decref(json_data);
+		json_decref(config);
+		jwt_free(jwt);
+		return PAM_SUCCESS;
+	} else {
+		printf("Imposter detected! Failure!\n");
+
+		json_decref(json_data);
+		json_decref(config);
+		jwt_free(jwt);
+		return PAM_AUTH_ERR;
+	}
+
+
+	return PAM_AUTH_ERR;
 }
 
 
