@@ -30,7 +30,7 @@ Create the file ```/etc/pam.conf``` and fill it with:
       "id": "<client_id_here">
    },
    "domain": "<@mycompany.com>",
-   "tenant": "<mycompany.onmicrosoft.com>
+   "tenant": "<mycompany.onmicrosoft.com>"
 }
 ```
 
