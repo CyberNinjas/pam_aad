@@ -3,19 +3,14 @@ FROM debian:9.7
 RUN apt update && apt install -y \
         automake \
         build-essential \
-        cmake \
         git \
-        libjansson-dev \
+        indent \
         libcurl4-openssl-dev \
-	libpam0g-dev \
+        libjansson-dev \
+        libpam0g-dev \
         libssl-dev \
         libtool \
-	pamtester \
-        pkg-config \
-	openssh-server \
-	syslog-ng \
-	vim	
-
+        pkg-config
 
 WORKDIR /tmp
 RUN git clone https://github.com/benmcollins/libjwt && \
@@ -38,8 +33,6 @@ RUN git clone https://github.com/antirez/sds libsds && \
 WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
 
-RUN ./bootstrap.sh && ./configure --with-pam-dir=/lib/x86_64-linux-gnu/security && make && make install
-
-RUN useradd test && ldconfig
-
-RUN cp /usr/src/pam_aad/pam-test.conf /etc/
+RUN ./bootstrap.sh && \
+    ./configure --with-pam-dir=/lib/x86_64-linux-gnu/security && \
+    make && make install

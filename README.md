@@ -2,7 +2,7 @@
 
 Azure Active Directory PAM Module
 
-_This PAM module aims to provide Azure Active Directory login to Linux over SSH._
+_This PAM module aims to provide Azure Active Directory authentication for Linux._
 
 ## Installation
 
@@ -15,22 +15,23 @@ sudo make install
 
 ## Configuration
 
-Edit ```/etc/pam.d/sshd``` with your favorite text editor and add the following line at the top:
+Edit `/etc/pam.d/{{service}}` and add the following line:
 
-```mustache
+```
 auth required pam_aad.so
 ``` 
 
 ### Configuration File
 
-Create the file ```/etc/pam.conf``` and fill it with:
-```
+Create the file ```/etc/pam_aad.conf``` and fill it with:
+
+```mustache
 { 
   "client": {
-      "id": "<client_id_here">
+      "id": "{{client_id}}"
    },
-   "domain": "<@mycompany.com>",
-   "tenant": "<mycompany.onmicrosoft.com>"
+   "domain": "{{domain}}",
+   "tenant": "{{organization}}.onmicrosoft.com>"
 }
 ```
 
@@ -38,23 +39,16 @@ Create the file ```/etc/pam.conf``` and fill it with:
 
 ### client_id
 
-This is the id of your application. Once you have create an application through <https://portal.azure.com>.
-When you create your app through your Azure portal you will recieve a code in the form of 
-`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
+This is the id of your application. Once you have created an application through <https://portal.azure.com>,
+you will recieve a code in the form of: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
 
 ### tenant
 
-Your organization. `[xxxxxx].onmicrosoft.com`, where `[xxxxxx]` is replaced by your 0365 organization name. 
-
-### required_group_id
-
-Checks if the user authenticating to the application is part of the group specified. This allows you to 
-restrict access to certain machines to specific members of your organization.
+Your organization, e.g., `{{organization}}.onmicrosoft.com`, replaced by your 0365 organization name. 
 
 ### Current behavior
 
-```
-ssh me@host
+```terminal
 Enter the following code at https://aka.ms/devicelogin : B8EYXPJQF
 Please hit enter to begin polling...
 
