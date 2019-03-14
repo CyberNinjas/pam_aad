@@ -10,7 +10,8 @@ RUN apt update && apt install -y \
         libpam0g-dev \
         libssl-dev \
         libtool \
-        pkg-config
+        pkg-config \
+        uuid-dev
 
 WORKDIR /tmp
 RUN git clone https://github.com/benmcollins/libjwt && \

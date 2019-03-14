@@ -28,10 +28,14 @@ Create the file ```/etc/pam_aad.conf``` and fill it with:
 ```mustache
 { 
   "client": {
-      "id": "{{client_id}}"
-   },
-   "domain": "{{domain}}",
-   "tenant": "{{organization}}.onmicrosoft.com>"
+    "id": "{{client_id}}"
+  },
+  "domain": "{{domain}}",
+  "tenant": {
+    "name": "{{organization}}.onmicrosoft.com",
+    "address": "{{organization_email_address}}"
+  },
+  "smtp_server": "{{smtp_server}}"
 }
 ```
 
