@@ -1,0 +1,315 @@
+{
+  "info": {
+    "_postman_id": "60b86a7d-3e53-4160-8842-1327d3dd508f",
+    "name": "Azure Active Directory PAM Module",
+    "description": "> Azure AD supports the device code grant, which allows users to sign in to input-constrained devices such as a smart TV, IoT device, or printer. --[Azure Active Directory v2.0 and the OAuth 2.0 device code flow](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-device-code)\n\n> Microsoft Graph exposes REST APIs and client libraries to...Azure Active Directory --[Overview of Microsoft Graph](https://docs.microsoft.com/en-us/graph/overview)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "poll_microsoft_for_token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "fc7624eb-e57f-4859-a212-a64ecd03f3e6",
+            "exec": [
+              "var jsonData = JSON.parse(responseBody);",
+              "postman.setEnvironmentVariable(\"token\", jsonData.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "value": "application/x-www-form-urlencoded",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "{{user_agent}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "resource",
+              "value": "{{resource_id}}",
+              "type": "text"
+            },
+            {
+              "key": "code",
+              "value": "{{device_code}}",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{client_id}}",
+              "type": "text"
+            },
+            {
+              "key": "grant_type",
+              "value": "device_code",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://{{host}}/common/oauth2/token/",
+          "protocol": "https",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "common",
+            "oauth2",
+            "token",
+            ""
+          ]
+        },
+        "description": "`src/rest.c#28`"
+      },
+      "response": []
+    },
+    {
+      "name": "read_code_from_microsoft",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "3d7546f7-693c-414c-99e2-6ee05e709c11",
+            "exec": [
+              "var jsonData = JSON.parse(responseBody);",
+              "postman.setEnvironmentVariable(\"device_code\", jsonData.device_code);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "User-Agent",
+            "value": "{{user_agent}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "value": "application/x-www-form-urlencoded",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "resource",
+              "value": "{{resource_id}}",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{client_id}}",
+              "type": "text"
+            },
+            {
+              "key": "client_request_id",
+              "value": "{{client_request_id}}",
+              "type": "text"
+            },
+            {
+              "key": "scope",
+              "value": "profile",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://{{host}}/{{tenant}}/oauth2/devicecode/",
+          "protocol": "https",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "{{tenant}}",
+            "oauth2",
+            "devicecode",
+            ""
+          ]
+        },
+        "description": "`src/rest.c#L213`"
+      },
+      "response": []
+    },
+    {
+      "name": "get_microsoft_graph_groups",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Host",
+            "value": "graph.windows.net",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "{{user_agent}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n \"groupId\":{{group_object_id}},\n \"memberId\":{{user_object_id}}\n}"
+        },
+        "url": {
+          "raw": "https://{{host}}/{{tenant}}/isMemberOf?api-version=1.6",
+          "protocol": "https",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "{{tenant}}",
+            "isMemberOf"
+          ],
+          "query": [
+            {
+              "key": "api-version",
+              "value": "1.6"
+            }
+          ]
+        },
+        "description": "`src/rest.c#L311`"
+      },
+      "response": []
+    },
+    {
+      "name": "get_microsoft_graph_userprofile",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Host",
+            "type": "text",
+            "value": "graph.windows.net"
+          },
+          {
+            "key": "User-Agent",
+            "type": "text",
+            "value": "{{user_agent}}"
+          },
+          {
+            "key": "",
+            "type": "text",
+            "value": "",
+            "disabled": true
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "https://{{host}}/{{tenant}}/isMemberOf?api-version=1.6",
+          "protocol": "https",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "{{tenant}}",
+            "isMemberOf"
+          ],
+          "query": [
+            {
+              "key": "api-version",
+              "value": "1.6"
+            }
+          ]
+        },
+        "description": "`src/rest.c#L412`"
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "id": "76dc2943-c4d0-4247-ae5c-ac34e25b9889",
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "id": "5de157cf-a02d-4558-b8c6-f9a94e29f038",
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "id": "355f90d8-9341-49aa-aa23-0af359504472",
+      "key": "host",
+      "value": "login.microsoftonline.com",
+      "type": "string"
+    },
+    {
+      "id": "78248c13-469a-4873-b48e-decaa2d77e31",
+      "key": "user_agent",
+      "value": "azure_authenticator_pam/1.0",
+      "type": "string"
+    },
+    {
+      "id": "416d7b9b-f109-4959-baa2-70cefd31b2f5",
+      "key": "resource_id",
+      "value": "00000002-0000-0000-c000-000000000000",
+      "type": "string"
+    },
+    {
+      "id": "79b2d4e6-4fc7-467e-b58e-8f5978efc81e",
+      "key": "client_request_id",
+      "value": "5929459294929",
+      "type": "string"
+    }
+  ]
+}

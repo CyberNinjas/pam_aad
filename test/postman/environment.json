@@ -1,0 +1,50 @@
+{
+  "id": "139e2084-39d6-474a-9a15-e9d65fd1d4e6",
+  "name": "Azure Active Directory PAM Module",
+  "values": [
+    {
+      "key": "tenant",
+      "value": ".onmicrosoft.com",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "enabled": true
+    },
+    {
+      "key": "client_id",
+      "value": "",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "enabled": true
+    },
+    {
+      "key": "required_group_id",
+      "value": "",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "enabled": true
+    },
+    {
+      "key": "device_code",
+      "value": "",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "enabled": true
+    },
+    {
+      "key": "token",
+      "value": "",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2018-12-07T15:45:22.826Z",
+  "_postman_exported_using": "Postman/6.5.3"
+}

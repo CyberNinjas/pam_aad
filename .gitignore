@@ -274,6 +274,6 @@ libtool
 src/.deps/
 src/.dirstamp
 src/*.lo
-simple-pam/
-pam-test.conf
-src/pam_aad.c.old
+
+# Use git add -f to override
+test/*

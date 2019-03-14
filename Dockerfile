@@ -28,11 +28,13 @@ RUN git clone https://github.com/antirez/sds libsds && \
     cp -a libsds.so.2.0.0 /usr/local/lib/ && \
     ln -s /usr/local/lib/libsds.so.2.0.0 /usr/local/lib/libsds.so && \
     ln -s /usr/local/lib/libsds.so.2.0.0 /usr/local/lib/libsds.so.2 && \
-    mkdir -p /usr/local/include/sds && cp -a sds.h /usr/local/include/sds/
+    ldconfig && mkdir -p /usr/local/include/sds && \
+    cp -a sds.h /usr/local/include/sds/ 
 
 WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
 
+ENV PAMDIR "/lib/x86_64-linux-gnu/security"
 RUN ./bootstrap.sh && \
-    ./configure --with-pam-dir=/lib/x86_64-linux-gnu/security && \
+    ./configure --with-pam-dir="${PAMDIR}" && \
     make && make install
