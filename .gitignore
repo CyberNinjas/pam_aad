@@ -271,9 +271,9 @@ config.status
 configure
 libtool
 *.la
-src/.deps/
-src/.dirstamp
-src/*.lo
+.deps/
+.dirstamp
+*.lo
 
 # Use git add -f to override
 test/*
