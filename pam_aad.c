@@ -16,7 +16,7 @@
 #define CODE_PROMPT "Please use this one-time passcode (OTP) to sign in to your account: "
 #define CONFIG_FILE "/etc/pam_aad.conf"
 #define HOST "https://login.microsoftonline.com/"
-#define RESOURCE_ID "00000002-0000-0000-c000-000000000000"
+#define RESOURCE "https://graph.microsoft.com/"
 #define SUBJECT "Your one-time passcode for signing in via Azure Active Directory"
 #define TTW 5			/* time to wait in seconds */
 #define USER_AGENT "azure_authenticator_pam/1.0"
@@ -125,7 +125,7 @@ static char *get_message_id(void)
 }
 
 static json_t *curl(const char *endpoint, const char *post_body,
-		    const char *headers)
+		    struct curl_slist *headers)
 {
     CURL *curl;
     CURLcode res;
@@ -146,7 +146,7 @@ static json_t *curl(const char *endpoint, const char *post_body,
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1L);
     if (headers)
-	curl_easy_setopt(curl, CURLOPT_HEADER, headers);
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
     /* curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); */
 
@@ -180,7 +180,7 @@ static void auth_bearer_request(struct ret_data *data,
     sds endpoint = sdsnew(HOST);
     endpoint = sdscat(endpoint, "common/oauth2/token");
 
-    sds post_body = sdsnew("resource=" RESOURCE_ID);
+    sds post_body = sdsnew("resource=" RESOURCE);
     post_body = sdscat(post_body, "&code=");
     post_body = sdscat(post_body, code);
     post_body = sdscat(post_body, "&client_id=");
@@ -221,7 +221,7 @@ static void oauth_request(struct ret_data *data, const char *client_id,
     endpoint = sdscat(endpoint, tenant);
     endpoint = sdscat(endpoint, "/oauth2/devicecode/");
 
-    sds post_body = sdsnew("resource=" RESOURCE_ID);
+    sds post_body = sdsnew("resource=" RESOURCE);
     post_body = sdscat(post_body, "&client_id=");
     post_body = sdscat(post_body, client_id);
     post_body = sdscat(post_body, "&scope=profile");
@@ -252,6 +252,45 @@ static int verify_user(jwt_t * jwt, const char *username)
 {
     const char *upn = jwt_get_grant(jwt, "upn");
     return (strcmp(upn, username) == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+static int verify_group(const char *auth_token, const char *group_id)
+{
+    json_t *resp;
+    struct curl_slist *headers = NULL;
+    int ret = EXIT_FAILURE;
+
+    sds auth_header = sdsnew("Authorization: Bearer ");
+    auth_header = sdscat(auth_header, auth_token);
+    headers = curl_slist_append(headers, auth_header);
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+
+    sds endpoint = sdsnew(RESOURCE);
+    endpoint = sdscat(endpoint, "v1.0/me/checkMemberGroups");
+
+    sds post_body = sdsnew("{\"groupIds\":[\"");
+    post_body = sdscat(post_body, group_id);
+    post_body = sdscat(post_body, "\"]}");
+
+    resp = curl(endpoint, post_body, headers);
+    resp = json_object_get(resp, "value");
+
+    if (resp) {
+	size_t index;
+	json_t *value;
+
+	json_array_foreach(resp, index, value) {
+	    if (strcmp(json_string_value(value), group_id) == 0)
+		ret = EXIT_SUCCESS;
+	}
+    } else {
+	fprintf(stderr, "json_object_get() failed: value NULL\n");
+    }
+
+    curl_slist_free_all(headers);
+    json_decref(resp);
+    sdsfree(auth_header);
+    return ret;
 }
 
 static int notify_user(pam_handle_t * pamh, const char *to_addr,
@@ -328,18 +367,19 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 {
     jwt_t *jwt;
 
-    const char *user, *client_id, *tenant,
+    const char *user, *client_id, *group_id, *tenant,
 	*domain, *u_code, *d_code, *ab_token, *tenant_addr, *smtp_server;
 
     struct ret_data data;
     json_t *json_data, *config;
     json_error_t error;
+    int ret = PAM_AUTH_ERR;
 
     config = json_load_file(CONFIG_FILE, 0, &error);
     if (!config) {
 	fprintf(stderr, "error in config on line %d: %s\n", error.line,
 		error.text);
-	return PAM_AUTH_ERR;
+	return ret;
     }
 
     if (json_object_get(json_object_get(config, "client"), "id")) {
@@ -347,15 +387,24 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 	    json_string_value(json_object_get
 			      (json_object_get(config, "client"), "id"));
     } else {
-	fprintf(stderr, "error with ID in JSON\n");
-	return PAM_AUTH_ERR;
+	fprintf(stderr, "error with Client ID in JSON\n");
+	return ret;
     }
 
     if (json_object_get(config, "domain")) {
 	domain = json_string_value(json_object_get(config, "domain"));
     } else {
 	fprintf(stderr, "error with Domain in JSON\n");
-	return PAM_AUTH_ERR;
+	return ret;
+    }
+
+    if (json_object_get(json_object_get(config, "group"), "id")) {
+	group_id =
+	    json_string_value(json_object_get
+			      (json_object_get(config, "group"), "id"));
+    } else {
+	fprintf(stderr, "error with Group ID in JSON\n");
+	return ret;
     }
 
     if (json_object_get(config, "tenant")) {
@@ -369,11 +418,11 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 				   "address"));
 	} else {
 	    fprintf(stderr, "error with tenant address in JSON\n");
-	    return PAM_AUTH_ERR;
+	    return ret;
 	}
     } else {
 	fprintf(stderr, "error with tenant in JSON\n");
-	return PAM_AUTH_ERR;
+	return ret;
     }
 
     if (json_object_get(config, "smtp_server")) {
@@ -381,12 +430,12 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 	    json_string_value(json_object_get(config, "smtp_server"));
     } else {
 	fprintf(stderr, "error with Domain in JSON\n");
-	return PAM_AUTH_ERR;
+	return ret;
     }
 
     if (pam_get_user(pamh, &user, NULL) != PAM_SUCCESS) {
 	fprintf(stderr, "pam_get_user(): failed to get a username\n");
-	return PAM_AUTH_ERR;
+	return ret;
     }
 
     sds user_addr = sdsnew(user);
@@ -411,19 +460,16 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
     ab_token = data.auth_bearer;
     jwt_decode(&jwt, ab_token, NULL, 0);
 
-    if (verify_user(jwt, user_addr) == 0) {
-	json_decref(json_data);
-	json_decref(config);
-	jwt_free(jwt);
-	return PAM_SUCCESS;
-    } else {
-	json_decref(json_data);
-	json_decref(config);
-	jwt_free(jwt);
-	return PAM_AUTH_ERR;
+    if (verify_user(jwt, user_addr) == 0
+	&& verify_group(ab_token, group_id) == 0) {
+	ret = PAM_SUCCESS;
     }
 
-    return PAM_AUTH_ERR;
+    json_decref(json_data);
+    json_decref(config);
+    jwt_free(jwt);
+
+    return ret;
 }
 
 

@@ -31,11 +31,14 @@ Create the file ```/etc/pam_aad.conf``` and fill it with:
     "id": "{{client_id}}"
   },
   "domain": "{{domain}}",
+  "group": {
+    "id": "{{group_id}}"
+  },
+  "smtp_server": "{{smtp_server}}",
   "tenant": {
     "name": "{{organization}}.onmicrosoft.com",
     "address": "{{organization_email_address}}"
-  },
-  "smtp_server": "{{smtp_server}}"
+  }
 }
 ```
 
