@@ -9,4 +9,6 @@ script:
   - docker build . -t cyberninjas/pam_aad
   - docker build . -t cyberninjas/pam_aad:ami -f Dockerfile.ami
   - docker build test -t cyberninjas/pam_aad:testing
+  - docker build test -t cyberninjas/pam_aad:testing-ami
   - docker run cyberninjas/pam_aad:testing
+  - docker run cyberninjas/pam_aad:testing-ami
