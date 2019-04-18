@@ -1,6 +1,6 @@
-FROM amazonlinux:2
+FROM amazonlinux:2018.03
 
-RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm \
+RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm \
     && yum update -y && yum group install -y 'Development Tools' \
     && yum install -y \
         git \
