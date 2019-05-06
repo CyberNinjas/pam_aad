@@ -1,0 +1,20 @@
+Source: pam-aad
+Maintainer: Lucas Ramage <lramage@cyberninjas.com>
+Section: admin
+Priority: optional
+Standards-Version: 3.9.8
+Build-Depends:
+ debhelper (>=9), libtool,
+ libcurl4-openssl-dev, libjansson-dev, libjwt-dev,
+ libpam0g-dev, libsds-dev, libssl-dev, pkg-config, uuid-dev
+Vcs-Git: https://github.com/CyberNinjas/pam_aad.git
+Vcs-Browser: https://github.com/CyberNinjas/pam_aad
+Homepage: https://github.com/CyberNinjas/pam_aad
+
+Package: libpam-aad
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libpam-runtime (>= 1.0.1-6)
+Description: Azure Active Directory PAM Module
+ This PAM module aims to provide Azure Active Directory authentication for Linux.
+ .
+

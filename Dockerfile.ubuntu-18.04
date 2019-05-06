@@ -1,8 +1,6 @@
-FROM debian:9.7
+FROM ubuntu:18.04
 
-RUN echo "deb http://http.us.debian.org/debian sid main" \
-        >> /etc/apt/sources.list && \
-    apt update && apt install -y \
+RUN apt update && apt install -y \
         automake \
         build-essential \
         curl \
@@ -33,5 +31,5 @@ WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
 
 RUN tar cvzf ../pam-aad_0.0.1.orig.tar.gz --exclude='.git*' . && \
-    debuild -us -uc -d -i'(.*)' && \
+    debuild -us -uc -i'(.*)' && \
     dpkg -i ../libpam-aad_0.0.1-1_amd64.deb
