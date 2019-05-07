@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	/bin/sh ./bootstrap.sh
+	dh_auto_configure -- --with-pam-dir=/lib/$(DEB_HOST_MULTIARCH)/security

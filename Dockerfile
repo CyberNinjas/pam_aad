@@ -34,7 +34,6 @@ RUN curl -Lo sds_2.0.0.orig.tar.gz \
 WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
 
-ENV PAMDIR "/lib/x86_64-linux-gnu/security"
-RUN ./bootstrap.sh && \
-    ./configure --with-pam-dir="${PAMDIR}" && \
-    make && make install
+RUN tar cvzf ../pam-aad_0.0.1.orig.tar.gz --exclude='.git*' . && \
+    debuild -us -uc -i'(.*)' && \
+    dpkg -i ../libpam-aad_0.0.1-1_amd64.deb
