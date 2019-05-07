@@ -1,6 +1,8 @@
 FROM debian:9.7
 
-RUN apt update && apt install -y \
+RUN echo "deb http://http.us.debian.org/debian sid main" \
+        >> /etc/apt/sources.list && \
+    apt update && apt install -y \
         automake \
         build-essential \
         curl \
@@ -10,17 +12,13 @@ RUN apt update && apt install -y \
         indent \
         libcurl4-openssl-dev \
         libjansson-dev \
+        libjwt-dev \
         libpam0g-dev \
         libssl-dev \
         libtool \
         pkg-config \
         quilt \
         uuid-dev
-
-WORKDIR /tmp
-RUN git clone https://github.com/benmcollins/libjwt && \
-    cd libjwt && git checkout tags/v1.10.1 && \
-    autoreconf -i && ./configure && make && make install
 
 WORKDIR /tmp
 RUN curl -Lo sds_2.0.0.orig.tar.gz \
@@ -35,5 +33,5 @@ WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
 
 RUN tar cvzf ../pam-aad_0.0.1.orig.tar.gz --exclude='.git*' . && \
-    debuild -us -uc -i'(.*)' && \
+    debuild -us -uc -d -i'(.*)' && \
     dpkg -i ../libpam-aad_0.0.1-1_amd64.deb

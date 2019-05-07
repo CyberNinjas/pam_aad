@@ -8,5 +8,6 @@ RUN apt update && apt install -y \
         syslog-ng \
         vim
 
+ENV PAMDIR "/lib/x86_64-linux-gnu/security"
 WORKDIR /usr/src/pam_aad
 CMD ["make", "-eC", "test"]
