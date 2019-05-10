@@ -8,6 +8,7 @@
 	"version": {
 		"name": "0.0.1",
 		"desc": "pre-release"
+		"gpgSign": true
 	},
 	"licenses": ["GPL-3.0-or-later"],
 	"desc": "auto-generated debian package",
