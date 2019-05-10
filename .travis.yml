@@ -1,20 +1,25 @@
 language: c
-
 sudo: required
-
 services:
-  - docker
-
+- docker
 script:
-  - docker build . -t cyberninjas/pam_aad
-  - docker build . -t cyberninjas/pam_aad:ami -f Dockerfile.ami
-  - docker build . -t cyberninjas/pam_aad:ami-2018.03 -f Dockerfile.ami-2018.03
-  - docker build . -t cyberninjas/pam_aad:ubuntu-18.04 -f Dockerfile.ubuntu-18.04
-  - docker build test -t cyberninjas/pam_aad:testing
-  - docker build test -t cyberninjas/pam_aad:testing-ami -f test/Dockerfile.ami
-  - docker build test -t cyberninjas/pam_aad:testing-ami-2018.03 -f test/Dockerfile.ami-2018.03
-  - docker build test -t cyberninjas/pam_aad:testing-ubuntu-18.04 -f test/Dockerfile.ubuntu-18.04
-  - docker run cyberninjas/pam_aad:testing
-  - docker run cyberninjas/pam_aad:testing-ami
-  - docker run cyberninjas/pam_aad:testing-ami-2018.03
-  - docker run cyberninjas/pam_aad:testing-ubuntu-18.04
+- docker build . -t cyberninjas/pam_aad
+- docker build . -t cyberninjas/pam_aad:ami -f Dockerfile.ami
+- docker build . -t cyberninjas/pam_aad:ami-2018.03 -f Dockerfile.ami-2018.03
+- docker build . -t cyberninjas/pam_aad:ubuntu-18.04 -f Dockerfile.ubuntu-18.04
+- docker build test -t cyberninjas/pam_aad:testing
+- docker build test -t cyberninjas/pam_aad:testing-ami -f test/Dockerfile.ami
+- docker build test -t cyberninjas/pam_aad:testing-ami-2018.03 -f test/Dockerfile.ami-2018.03
+- docker build test -t cyberninjas/pam_aad:testing-ubuntu-18.04 -f test/Dockerfile.ubuntu-18.04
+- docker run cyberninjas/pam_aad:testing
+- docker run cyberninjas/pam_aad:testing-ami
+- docker run cyberninjas/pam_aad:testing-ami-2018.03
+- docker run cyberninjas/pam_aad:testing-ubuntu-18.04
+- docker run -v $(pwd):/usr/src/pam_aad cyberninjas/pam_aad /bin/sh -c "cp /usr/src/*.deb /usr/src/pam_aad"
+deploy:
+  provider: bintray
+  file: .bintray.json
+  user: jnchi
+  key:
+    secure: FBvhZ56Cx593d0sTMF/D37RKN8b8IflfFRqZP7n5IHO023Kp/z2YN7C9dkCjdLcspKkIvnuBMb6fr3IjZR8WOBPvhpxxDrw03ezLFXYdIBHeu17U2UtAisUo14MHT22EJslat6OQN/QL4pkwgjv3XOJNAdixaD80q7TSpwbiVws8EhVUOtCLoAGr/5MebLkvF+XYoWHn5FSMfmXHicPPfk+zUDnTRpdCgaIIeTBCgOYKc3d3jKRUnZZkSyGEkGKer4EBW7HuZsIcp8MbJty/dsCXPU6Se264bbLXN1bTsaRI6MEkLbLJrswYIasSuHyAavOclRLDQeUkTf6bf7qr58D+yseewpTEDRhNWyH2sW9/ptLZ17lAPP5He6tdwZhXdsDxr9QhXNoyZ312hizg1WXF/1gVEuR7ruqjh1cEN0LpFeWTrlj7mwMR9+uuKLAW8CnxUJNFcJi2sNSfx2CepXnmuoJIhk75gC3WhXqhF+ctnxYCwYihIEyrubioPwZsHxbqi8WCSEiiHJ6s+3v93oJdSHmSrPu/K/vp+0hKnPBqEgAacA1VbiiSeEJDNRUVzuSDEaPM2XiSI8D/IMwWodV7rw0VGLt1uDD1tV2kE3JOBLyDO+A3eHZd3eZX2TXy+bzpV7KykwD4tw/1Gpg0CBXvgDEJvnkWPJbEvLXtMKM=
+  skip_cleanup: true

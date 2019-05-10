@@ -1,0 +1,27 @@
+{
+	"package": {
+		"name": "libpam-aad",
+		"repo": "aad",
+		"subject": "jnchi"
+	},
+
+	"version": {
+		"name": "0.0.1",
+		"desc": "pre-release"
+	},
+	"licenses": ["GPL-3.0-or-later"],
+	"desc": "auto-generated debian package",
+	"files": [
+		{
+			"includePattern": "./(.[^/]*(\\.deb)$)",
+			"uploadPattern": "$1",
+			"matrixParams": {
+				"deb_distribution": "unstable",
+				"deb_component": "main",
+				"deb_architecture": "amd64"
+			}
+		}
+	],
+	"publish": true,
+	"override": true
+}
