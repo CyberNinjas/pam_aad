@@ -20,14 +20,12 @@ RUN echo "deb http://http.us.debian.org/debian sid main" \
         quilt \
         uuid-dev
 
+ENV SDSMIRROR "https://gitlab.com/oxr463/sds/-/jobs/210491217/artifacts/raw" 
 WORKDIR /tmp
-RUN curl -Lo sds_2.0.0.orig.tar.gz \
-    https://gitlab.com/oxr463/sds/-/archive/debian-2.0.0-1/sds-debian-2.0.0-1.tar.gz \
-    && tar -xf sds_2.0.0.orig.tar.gz && \
-    mv sds-debian-2.0.0-1 sds-2.0.0 && \
-    cd sds-2.0.0 && debuild -us -uc && \
-    dpkg -i ../libsds2.0.0_2.0.0-1_amd64.deb && \
-    dpkg -i ../libsds-dev_2.0.0-1_amd64.deb
+RUN curl -LO "${SDSMIRROR}/libsds2.0.0_2.0.0-1_amd64.deb" && \
+    curl -LO "${SDSMIRROR}/libsds-dev_2.0.0-1_amd64.deb" && \
+    dpkg -i libsds2.0.0_2.0.0-1_amd64.deb && \
+    dpkg -i libsds-dev_2.0.0-1_amd64.deb
 
 WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
