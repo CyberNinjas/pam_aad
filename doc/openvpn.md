@@ -2,6 +2,8 @@
 
 ## Configuration
 
+### Server
+
 `/etc/openvpn/server.conf`
 
 ```txt
@@ -9,6 +11,8 @@ plugin /usr/lib/openvpn/openvpn-plugin-auth-pam.so openvpn
 client-cert-not-required
 username-as-common-name
 ```
+
+Source: [contrib/openvpn/server.conf](../contrib/openvpn/server.conf)
 
 `/etc/pam.d/openvpn`
 
@@ -26,3 +30,26 @@ account required pam_nologin.so
 ```terminal
 cp /etc/pam.d/sshd /etc/pam.d/openvpn
 ```
+
+### Client
+
+`/etc/openvpn/client.conf`, (or `C:\Program Files\OpenVPN\config\client.ovpn` on Windows)
+
+```txt
+# OpenVPN Client Configuration
+client
+dev tun
+proto udp
+remote 192.168.1.128 1194
+nobind
+;user nobody
+;group nobody
+persist-key
+persist-tun
+;mute-replay-warnings
+ca ca.crt # from server
+verb 5
+auth-user-pass
+```
+
+Source: [contrib/openvpn/client.conf](../contrib/openvpn/client.conf)
