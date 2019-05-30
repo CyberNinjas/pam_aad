@@ -283,3 +283,4 @@ debian/*.log
 debian/.*
 debian/files
 debian/libpam-aad*
+*.deb

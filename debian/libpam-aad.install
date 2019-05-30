@@ -1,0 +1,2 @@
+debian/pam_aad.conf etc
+debian/pam-configs/aad usr/share/pam-configs
