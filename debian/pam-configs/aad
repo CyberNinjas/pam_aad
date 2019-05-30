@@ -1,0 +1,6 @@
+Name: Authenticate using Azure Active Directory
+Default: yes
+Priority: 64
+Auth-Type: Primary
+Auth:
+	auth required pam_aad.so
