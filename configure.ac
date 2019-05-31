@@ -36,10 +36,7 @@ AC_ARG_WITH(pam-dir,
 AC_MSG_NOTICE([PAM installation path $PAMDIR])
 
 dnl Checks for libraries.
-AC_CHECK_LIB([cjson], [cJSON_CreateObjectReference])
-AC_CHECK_LIB([crypto], [CRYPTO_new_ex_data])
 AC_CHECK_LIB([jwt], [jwt_set_alg])
-AC_CHECK_LIB([m], [cos])
 AC_CHECK_LIB([pam], [pam_get_user])
 AC_CHECK_LIB([ssl], [SSL_library_init])
 

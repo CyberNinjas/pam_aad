@@ -5,6 +5,7 @@
 #include <security/pam_appl.h>
 #include <security/pam_ext.h>
 #include <security/pam_modules.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,10 +16,11 @@
 #define AUTH_ERROR "authorization_pending"
 #define CODE_PROMPT "Please use this one-time passcode (OTP) to sign in to your account: "
 #define CONFIG_FILE "/etc/pam_aad.conf"
+#define DEBUG false
 #define HOST "https://login.microsoftonline.com/"
 #define RESOURCE "https://graph.microsoft.com/"
 #define SUBJECT "Your one-time passcode for signing in via Azure Active Directory"
-#define TTW 5			/* time to wait in seconds */
+#define TTW 5                   /* time to wait in seconds */
 #define USER_AGENT "azure_authenticator_pam/1.0"
 #define USER_PROMPT "An email with a one-time passcode was sent to your email." \
 	            "\nEnter the code at https://aka.ms/devicelogin, then press enter.\n"
@@ -38,36 +40,36 @@ struct ret_data {
 };
 
 static size_t read_callback(void *ptr, size_t size, size_t nmemb,
-			    void *userp)
+                            void *userp)
 {
     struct message *msg = (struct message *) userp;
     char *data;
 
     if ((size == 0) || (nmemb == 0) || ((size * nmemb) < 1)) {
-	return 0;
+        return 0;
     }
     data = msg->data[msg->lines_read];
 
     if (data) {
-	size_t len = strlen(data);
-	memcpy(ptr, data, len);
-	msg->lines_read++;
-	return len;
+        size_t len = strlen(data);
+        memcpy(ptr, data, len);
+        msg->lines_read++;
+        return len;
     }
 
     return 0;
 }
 
 static size_t response_callback(void *contents, size_t size, size_t nmemb,
-				void *userp)
+                                void *userp)
 {
     size_t realsize = size * nmemb;
     struct response *resp = (struct response *) userp;
     char *ptr = realloc(resp->data, resp->size + realsize + 1);
     if (ptr == NULL) {
-	// Out of memory
-	printf("Not enough memory (realloc returned NULL)\n");
-	return 0;
+        // Out of memory
+        printf("Not enough memory (realloc returned NULL)\n");
+        return 0;
     }
 
     resp->data = ptr;
@@ -104,28 +106,28 @@ static char *get_message_id(void)
     uuid_generate(uuid);
 
     for (i = 0; i < sizeof(uuid); i++) {
-	if (i == 0) {
-	    snprintf(msg_id, sizeof(msg_id) - strlen(msg_id), "%02x",
-		     uuid[i]);
-	} else if (i == 3 || i == 5 || i == 7 || i == 9) {
-	    snprintf(msg_id + strlen(msg_id),
-		     sizeof(msg_id) - strlen(msg_id) + 1, "%02x-",
-		     uuid[i]);
-	} else {
-	    snprintf(msg_id + strlen(msg_id),
-		     sizeof(msg_id) - strlen(msg_id), "%02x", uuid[i]);
-	}
+        if (i == 0) {
+            snprintf(msg_id, sizeof(msg_id) - strlen(msg_id), "%02x",
+                     uuid[i]);
+        } else if (i == 3 || i == 5 || i == 7 || i == 9) {
+            snprintf(msg_id + strlen(msg_id),
+                     sizeof(msg_id) - strlen(msg_id) + 1, "%02x-",
+                     uuid[i]);
+        } else {
+            snprintf(msg_id + strlen(msg_id),
+                     sizeof(msg_id) - strlen(msg_id), "%02x", uuid[i]);
+        }
     }
 
     getdomainname(domainname, sizeof(domainname));
     gethostname(hostname, sizeof(hostname));
     snprintf(message_id, len, "Message-ID: <%s@%s.%s>\r\n", msg_id,
-	     hostname, domainname);
+             hostname, domainname);
     return message_id;
 }
 
 static json_t *curl(const char *endpoint, const char *post_body,
-		    struct curl_slist *headers)
+                    struct curl_slist *headers, bool debug)
 {
     CURL *curl;
     CURLcode res;
@@ -146,23 +148,24 @@ static json_t *curl(const char *endpoint, const char *post_body,
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1L);
     if (headers)
-	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-    /* curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); */
+    if (debug)
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
     res = curl_easy_perform(curl);
 
     if (res != CURLE_OK) {
-	fprintf(stderr, "curl_easy_perform() failed: %s\n",
-		curl_easy_strerror(res));
+        fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                curl_easy_strerror(res));
     } else {
-	data = json_loads(resp.data, 0, &error);
+        data = json_loads(resp.data, 0, &error);
 
-	if (!data) {
-	    fprintf(stderr, "json_loads() failed: %s\n", error.text);
+        if (!data) {
+            fprintf(stderr, "json_loads() failed: %s\n", error.text);
 
-	    return NULL;
-	}
+            return NULL;
+        }
     }
 
     curl_easy_cleanup(curl);
@@ -172,8 +175,9 @@ static json_t *curl(const char *endpoint, const char *post_body,
 }
 
 static void auth_bearer_request(struct ret_data *data,
-				const char *client_id, const char *tenant,
-				const char *code, json_t * json_data)
+                                const char *client_id, const char *tenant,
+                                const char *code, json_t * json_data,
+                                bool debug)
 {
     const char *auth_bearer;
 
@@ -188,21 +192,22 @@ static void auth_bearer_request(struct ret_data *data,
     post_body = sdscat(post_body, "&grant_type=device_code");
 
     for (;;) {
-	nanosleep((const struct timespec[]) { {
-		  TTW, 0}}, NULL);
-	json_data = curl(endpoint, post_body, NULL);
+        nanosleep((const struct timespec[]) { {
+                                               TTW, 0 }
+                  }, NULL);
+        json_data = curl(endpoint, post_body, NULL, debug);
 
-	if (json_object_get(json_data, "access_token")) {
-	    auth_bearer =
-		json_string_value(json_object_get
-				  (json_data, "access_token"));
-	} else {
-	    auth_bearer =
-		json_string_value(json_object_get(json_data, "error"));
-	}
+        if (json_object_get(json_data, "access_token")) {
+            auth_bearer =
+                json_string_value(json_object_get
+                                  (json_data, "access_token"));
+        } else {
+            auth_bearer =
+                json_string_value(json_object_get(json_data, "error"));
+        }
 
-	if (strcmp(auth_bearer, AUTH_ERROR) != 0)
-	    break;
+        if (strcmp(auth_bearer, AUTH_ERROR) != 0)
+            break;
 
     }
 
@@ -213,7 +218,8 @@ static void auth_bearer_request(struct ret_data *data,
 }
 
 static void oauth_request(struct ret_data *data, const char *client_id,
-			  const char *tenant, json_t * json_data)
+                          const char *tenant, json_t * json_data,
+                          bool debug)
 {
     const char *d_code, *u_code;
 
@@ -226,19 +232,19 @@ static void oauth_request(struct ret_data *data, const char *client_id,
     post_body = sdscat(post_body, client_id);
     post_body = sdscat(post_body, "&scope=profile");
 
-    json_data = curl(endpoint, post_body, NULL);
+    json_data = curl(endpoint, post_body, NULL, debug);
 
     if (json_object_get(json_data, "device_code")
-	&& json_object_get(json_data, "user_code")) {
-	d_code =
-	    json_string_value(json_object_get(json_data, "device_code"));
-	u_code =
-	    json_string_value(json_object_get(json_data, "user_code"));
+        && json_object_get(json_data, "user_code")) {
+        d_code =
+            json_string_value(json_object_get(json_data, "device_code"));
+        u_code =
+            json_string_value(json_object_get(json_data, "user_code"));
     } else {
-	fprintf(stderr,
-		"json_object_get() failed: device_code & user_code NULL\n");
+        fprintf(stderr,
+                "json_object_get() failed: device_code & user_code NULL\n");
 
-	exit(1);
+        exit(1);
     }
 
     data->d_code = d_code;
@@ -254,7 +260,8 @@ static int verify_user(jwt_t * jwt, const char *username)
     return (strcmp(upn, username) == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-static int verify_group(const char *auth_token, const char *group_id)
+static int verify_group(const char *auth_token, const char *group_id,
+                        bool debug)
 {
     json_t *resp;
     struct curl_slist *headers = NULL;
@@ -272,19 +279,19 @@ static int verify_group(const char *auth_token, const char *group_id)
     post_body = sdscat(post_body, group_id);
     post_body = sdscat(post_body, "\"]}");
 
-    resp = curl(endpoint, post_body, headers);
+    resp = curl(endpoint, post_body, headers, debug);
     resp = json_object_get(resp, "value");
 
     if (resp) {
-	size_t index;
-	json_t *value;
+        size_t index;
+        json_t *value;
 
-	json_array_foreach(resp, index, value) {
-	    if (strcmp(json_string_value(value), group_id) == 0)
-		ret = EXIT_SUCCESS;
-	}
+        json_array_foreach(resp, index, value) {
+            if (strcmp(json_string_value(value), group_id) == 0)
+                ret = EXIT_SUCCESS;
+        }
     } else {
-	fprintf(stderr, "json_object_get() failed: value NULL\n");
+        fprintf(stderr, "json_object_get() failed: value NULL\n");
     }
 
     curl_slist_free_all(headers);
@@ -294,8 +301,8 @@ static int verify_group(const char *auth_token, const char *group_id)
 }
 
 static int notify_user(pam_handle_t * pamh, const char *to_addr,
-		       const char *from_addr, const char *message,
-		       const char *smtp_server)
+                       const char *from_addr, const char *message,
+                       const char *smtp_server, bool debug)
 {
     CURL *curl;
     CURLcode res = CURLE_OK;
@@ -334,27 +341,28 @@ static int notify_user(pam_handle_t * pamh, const char *to_addr,
 
     curl = curl_easy_init();
     if (curl) {
-	curl_easy_setopt(curl, CURLOPT_USE_SSL, (long) CURLUSESSL_ALL);
-	curl_easy_setopt(curl, CURLOPT_URL, smtp_url);
-	curl_easy_setopt(curl, CURLOPT_MAIL_FROM, from_addr);
-	recipients = curl_slist_append(recipients, to_addr);
-	curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipients);
-	curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
-	curl_easy_setopt(curl, CURLOPT_READDATA, msg);
-	curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+        curl_easy_setopt(curl, CURLOPT_USE_SSL, (long) CURLUSESSL_ALL);
+        curl_easy_setopt(curl, CURLOPT_URL, smtp_url);
+        curl_easy_setopt(curl, CURLOPT_MAIL_FROM, from_addr);
+        recipients = curl_slist_append(recipients, to_addr);
+        curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipients);
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+        curl_easy_setopt(curl, CURLOPT_READDATA, msg);
+        curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
 
-	/* curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); */
+        if (debug)
+            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-	res = curl_easy_perform(curl);
+        res = curl_easy_perform(curl);
 
-	if (res != CURLE_OK)
-	    fprintf(stderr, "curl_easy_perform() failed: %s\n",
-		    curl_easy_strerror(res));
+        if (res != CURLE_OK)
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                    curl_easy_strerror(res));
 
-	curl_slist_free_all(recipients);
-	curl_easy_cleanup(curl);
+        curl_slist_free_all(recipients);
+        curl_easy_cleanup(curl);
 
-	(void) pam_prompt(pamh, PAM_PROMPT_ECHO_OFF, NULL, USER_PROMPT);
+        (void) pam_prompt(pamh, PAM_PROMPT_ECHO_OFF, NULL, USER_PROMPT);
     }
 
     free(msg->data[0]);
@@ -363,12 +371,12 @@ static int notify_user(pam_handle_t * pamh, const char *to_addr,
 }
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
-				   int argc, const char **argv)
+                                   int argc, const char **argv)
 {
     jwt_t *jwt;
-
+    bool debug = DEBUG;
     const char *user, *client_id, *group_id, *tenant,
-	*domain, *u_code, *d_code, *ab_token, *tenant_addr, *smtp_server;
+        *domain, *u_code, *d_code, *ab_token, *tenant_addr, *smtp_server;
 
     struct ret_data data;
     json_t *json_data, *config;
@@ -377,65 +385,71 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 
     config = json_load_file(CONFIG_FILE, 0, &error);
     if (!config) {
-	fprintf(stderr, "error in config on line %d: %s\n", error.line,
-		error.text);
-	return ret;
+        fprintf(stderr, "error in config on line %d: %s\n", error.line,
+                error.text);
+        return ret;
     }
 
+    if (json_object_get(config, "debug"))
+        if (strcmp
+            (json_string_value(json_object_get(config, "debug")),
+             "true") == 0)
+            debug = true;
+
     if (json_object_get(json_object_get(config, "client"), "id")) {
-	client_id =
-	    json_string_value(json_object_get
-			      (json_object_get(config, "client"), "id"));
+        client_id =
+            json_string_value(json_object_get
+                              (json_object_get(config, "client"), "id"));
     } else {
-	fprintf(stderr, "error with Client ID in JSON\n");
-	return ret;
+        fprintf(stderr, "error with Client ID in JSON\n");
+        return ret;
     }
 
     if (json_object_get(config, "domain")) {
-	domain = json_string_value(json_object_get(config, "domain"));
+        domain = json_string_value(json_object_get(config, "domain"));
     } else {
-	fprintf(stderr, "error with Domain in JSON\n");
-	return ret;
+        fprintf(stderr, "error with Domain in JSON\n");
+        return ret;
     }
 
     if (json_object_get(json_object_get(config, "group"), "id")) {
-	group_id =
-	    json_string_value(json_object_get
-			      (json_object_get(config, "group"), "id"));
+        group_id =
+            json_string_value(json_object_get
+                              (json_object_get(config, "group"), "id"));
     } else {
-	fprintf(stderr, "error with Group ID in JSON\n");
-	return ret;
+        fprintf(stderr, "error with Group ID in JSON\n");
+        return ret;
     }
 
     if (json_object_get(config, "tenant")) {
-	tenant =
-	    json_string_value(json_object_get
-			      (json_object_get(config, "tenant"), "name"));
-	if (json_object_get(json_object_get(config, "tenant"), "address")) {
-	    tenant_addr =
-		json_string_value(json_object_get
-				  (json_object_get(config, "tenant"),
-				   "address"));
-	} else {
-	    fprintf(stderr, "error with tenant address in JSON\n");
-	    return ret;
-	}
+        tenant =
+            json_string_value(json_object_get
+                              (json_object_get(config, "tenant"), "name"));
+        if (json_object_get(json_object_get(config, "tenant"), "address")) {
+            tenant_addr =
+                json_string_value(json_object_get
+                                  (json_object_get(config, "tenant"),
+                                   "address"));
+        } else {
+            fprintf(stderr, "error with tenant address in JSON\n");
+            return ret;
+        }
     } else {
-	fprintf(stderr, "error with tenant in JSON\n");
-	return ret;
+        fprintf(stderr, "error with tenant in JSON\n");
+        return ret;
     }
 
     if (json_object_get(config, "smtp_server")) {
-	smtp_server =
-	    json_string_value(json_object_get(config, "smtp_server"));
+        smtp_server =
+            json_string_value(json_object_get(config, "smtp_server"));
     } else {
-	fprintf(stderr, "error with Domain in JSON\n");
-	return ret;
+        fprintf(stderr, "error with Domain in JSON\n");
+        return ret;
     }
 
     if (pam_get_user(pamh, &user, NULL) != PAM_SUCCESS) {
-	fprintf(stderr, "pam_get_user(): failed to get a username\n");
-	return ret;
+        fprintf(stderr, "pam_get_user(): failed to get a username\n");
+        return ret;
     }
 
     sds user_addr = sdsnew(user);
@@ -444,16 +458,17 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 
     curl_global_init(CURL_GLOBAL_ALL);
 
-    oauth_request(&data, client_id, tenant, json_data);
+    oauth_request(&data, client_id, tenant, json_data, debug);
 
     u_code = data.u_code;
     d_code = data.d_code;
 
     sds prompt = sdsnew(CODE_PROMPT);
     prompt = sdscat(prompt, u_code);
-    notify_user(pamh, user_addr, tenant_addr, prompt, smtp_server);
+    notify_user(pamh, user_addr, tenant_addr, prompt, smtp_server, debug);
 
-    auth_bearer_request(&data, client_id, tenant, d_code, json_data);
+    auth_bearer_request(&data, client_id, tenant, d_code, json_data,
+                        debug);
 
     curl_global_cleanup();
 
@@ -461,8 +476,8 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
     jwt_decode(&jwt, ab_token, NULL, 0);
 
     if (verify_user(jwt, user_addr) == 0
-	&& verify_group(ab_token, group_id) == 0) {
-	ret = PAM_SUCCESS;
+        && verify_group(ab_token, group_id, debug) == 0) {
+        ret = PAM_SUCCESS;
     }
 
     json_decref(json_data);
@@ -474,13 +489,13 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t * pamh, int flags,
-			      int argc, const char **argv)
+                              int argc, const char **argv)
 {
     return PAM_SUCCESS;
 }
 
 PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t * pamh, int flags,
-				int argc, const char **argv)
+                                int argc, const char **argv)
 {
     return PAM_SUCCESS;
 }
