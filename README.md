@@ -1,4 +1,4 @@
-# pam_aad [![Build Status][travis-badge]][travis-url] [![GPL-3.0-or-later][gpl-badge]][gpl-license]
+# pam_aad [![Build Status][travis-badge]][travis-url] [![GPL-3.0-or-later][gpl-badge]][gpl-license] [![Download](https://api.bintray.com/packages/jnchi/aad/libpam-aad/images/download.svg) ](https://bintray.com/jnchi/aad/libpam-aad/_latestVersion) 
 
 Azure Active Directory PAM Module
 
