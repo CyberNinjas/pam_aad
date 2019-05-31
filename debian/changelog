@@ -1,3 +1,9 @@
+pam-aad (0.0.2-1) UNRELEASED; urgency=medium
+
+  * New release.
+
+ -- Lucas Ramage <lramage@cyberninjas.com>  Fri, 31 May 2019 17:27:25 +0000
+
 pam-aad (0.0.1-1) UNRELEASED; urgency=medium
 
   * Initial release.

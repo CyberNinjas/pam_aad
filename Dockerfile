@@ -20,16 +20,17 @@ RUN echo "deb http://http.us.debian.org/debian sid main" \
         quilt \
         uuid-dev
 
-ENV SDSMIRROR "https://gitlab.com/oxr463/sds/-/jobs/210491217/artifacts/raw" 
+ENV SDSMIRROR="https://gitlab.com/oxr463/sds/-/jobs/210491217/artifacts/raw" \
+    SDSVERSION="2.0.0" SDSDEBVERSION="2.0.0-1"
 WORKDIR /tmp
-RUN curl -LO "${SDSMIRROR}/libsds2.0.0_2.0.0-1_amd64.deb" && \
-    curl -LO "${SDSMIRROR}/libsds-dev_2.0.0-1_amd64.deb" && \
-    dpkg -i libsds2.0.0_2.0.0-1_amd64.deb && \
-    dpkg -i libsds-dev_2.0.0-1_amd64.deb
+RUN curl -LO "${SDSMIRROR}/libsds${SDSVERSION}_${SDSDEBVERSION}_amd64.deb" && \
+    curl -LO "${SDSMIRROR}/libsds-dev_${SDSDEBVERSION}_amd64.deb" && \
+    dpkg -i "libsds${SDSVERSION}_${SDSDEBVERSION}_amd64.deb" && \
+    dpkg -i "libsds-dev_${SDSDEBVERSION}_amd64.deb"
 
 WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
-
-RUN tar cvzf ../pam-aad_0.0.1.orig.tar.gz --exclude='.git*' . && \
+ENV PAMAADVERSION="0.0.2" PAMAADDEBVERSION="0.0.2-1"
+RUN tar cvzf "../pam-aad_${PAMAADVERSION}.orig.tar.gz" --exclude='.git*' . && \
     debuild -us -uc -d -i'(.*)' && \
-    dpkg -i ../libpam-aad_0.0.1-1_amd64.deb
+    dpkg -i "../libpam-aad_${PAMAADDEBVERSION}_amd64.deb"
