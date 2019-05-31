@@ -6,7 +6,7 @@
 	},
 
 	"version": {
-		"name": "0.0.1",
+		"name": "0.0.2",
 		"desc": "pre-release",
 		"gpgSign": true
 	},
