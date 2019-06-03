@@ -97,15 +97,6 @@ AuthenticationMethods keyboard-interactive
 
 See also: [debian - How to use the ssh server with PAM but disallow password auth? - Server Fault](https://serverfault.com/questions/783082/how-to-use-the-ssh-server-with-pam-but-disallow-password-auth)
 
-## Issues
-
-### 1)
-> Requires a user to hit enter, instead of just displaying the message instead of polling for a set amount of time and logging in when the token is acquired and validated. --[README][readme-issues]
-
-See also: [commit f3d858f5](https://github.com/CyberNinjas/pam_aad/commit/f3d858f5b26b5b8550891fdf0385f3e70c6e2aff#commitcomment-31557042)
-
-[readme-issues]: https://github.com/CyberNinjas/pam_aad#issues-with-the-above
-
 ## Tools
 
 - [pamtester](http://pamtester.sourceforge.net)
