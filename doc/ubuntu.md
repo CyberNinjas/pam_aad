@@ -32,8 +32,6 @@ The package provided should automatically install the following configuration fi
 - [`/etc/pam_aad.conf`](../debian/pam_aad.conf)
 - [`/usr/share/pam-configs/aad`](../debian/pam-configs/aad)
 
-Note: 
-
 ## Troubleshooting
 
 If `add-apt-repository` is missing from your system, i.e., a docker image,
