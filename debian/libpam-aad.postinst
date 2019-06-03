@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+fix_config_permissions() {
+    echo "Fixing configuration permissions..."
+    # abort if /etc/pam_aad.conf does not exist
+    if ! [ -e /etc/pam_aad.conf ]; then
+        echo "Could not find /etc/pam_aad.conf."
+        return
+    fi
+
+    chmod 600 /etc/pam_aad.conf
+}
+
+if [ "$1" = configure ]; then
+    if [ -z "$2" ]; then
+        echo "First installation detected..."
+        # first install: setup the recommended configuration
+        fix_config_permissions
+    fi
+fi
+
+#DEBHELPER#
