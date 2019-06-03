@@ -25,6 +25,15 @@ Note: __Both__ PPA's must be installed in order for all of the dependencies to b
 apt update && apt install -y libpam-aad
 ```
 
+## Configuration
+
+The package provided should automatically install the following configuration files:
+
+- [`/etc/pam_aad.conf`](../debian/pam_aad.conf)
+- [`/usr/share/pam-configs/aad`](../debian/pam-configs/aad)
+
+Note: 
+
 ## Troubleshooting
 
 If `add-apt-repository` is missing from your system, i.e., a docker image,
