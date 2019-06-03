@@ -8,3 +8,7 @@ DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 override_dh_auto_configure:
 	/bin/sh ./bootstrap.sh
 	dh_auto_configure -- --with-pam-dir=/lib/$(DEB_HOST_MULTIARCH)/security
+
+override_dh_fixperms:
+        dh_fixperms
+        chmod 600 /etc/pam_aad.conf
