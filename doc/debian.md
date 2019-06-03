@@ -24,6 +24,13 @@ echo "deb https://dl.bintray.com/jnchi/aad unstable main" | tee -a /etc/apt/sour
 apt update && apt install -y libpam-aad
 ```
 
+## Configuration
+
+The package provided should automatically install the following configuration files:
+
+- [`/etc/pam_aad.conf`](../debian/pam_aad.conf)
+- [`/usr/share/pam-configs/aad`](../debian/pam-configs/aad)
+
 ## Troubleshooting
 
 If you are unable to add the package repository due to it being served via HTTPS,
