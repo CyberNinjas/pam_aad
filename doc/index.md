@@ -118,3 +118,7 @@ Example:
 - [Linux-PAM (Pluggable Authentication Modules for Linux)](http://www.linux-pam.org)
 
 - [pam_debug - debug the PAM stack](http://linux-pam.org/Linux-PAM-html/sag-pam_debug.html)
+
+## See also
+
+- [puppet-aad](https://github.com/Jnchi/puppet-aad)
