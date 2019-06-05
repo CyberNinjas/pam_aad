@@ -52,10 +52,5 @@ apt-key adv --keyserver keyserver.ubuntu.com --recv A2C0BCEBD63BA8C1
 apt-key adv --keyserver keyserver.ubuntu.com --recv 68D35504E523B6B5
 ```
 
-## Resources
-
-- [Ubuntu Documentation - OpenVPN](https://help.ubuntu.com/lts/serverguide/openvpn.html)
-- [OpenVPN - 2x HOW TO](https://openvpn.net/community-resources/how-to)
-
 [jnchi-ppa]: https://launchpad.net/~jnchi/+archive/ubuntu/ppa
 [sds-ppa]: https://launchpad.net/~lramage/+archive/ubuntu/sds

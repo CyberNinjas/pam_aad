@@ -53,3 +53,10 @@ auth-user-pass
 ```
 
 Source: [contrib/openvpn/client.conf](../contrib/openvpn/client.conf)
+
+## Resources
+
+- [Debian Wiki - OpenVPN](https://wiki.debian.org/OpenVPN)
+- [OpenVPN - 2x HOW TO](https://openvpn.net/community-resources/how-to)
+- [Ubuntu Documentation - OpenVPN](https://help.ubuntu.com/lts/serverguide/openvpn.html)
+
