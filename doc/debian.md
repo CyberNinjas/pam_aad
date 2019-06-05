@@ -51,5 +51,10 @@ apt install -y gnupg2
 apt-key adv --keyserver pgp.mit.edu --recv 67FF8700EB10F0B9
 ```
 
+## Resources
+
+- [Debian Wiki - OpenVPN](https://wiki.debian.org/OpenVPN)
+- [OpenVPN - 2x HOW TO](https://openvpn.net/community-resources/how-to)
+
 [bintray]: https://bintray.com/jnchi/aad
 [sid]: https://www.debian.org/releases/sid
