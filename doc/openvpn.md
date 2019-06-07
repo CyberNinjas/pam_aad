@@ -17,7 +17,7 @@ Source: [contrib/openvpn/server.conf](../contrib/openvpn/server.conf)
 `/etc/pam.d/openvpn`
 
 ```txt
-auth required pam_aad.so client_id= resource_id= tenant= required_group_id=
+auth required pam_aad.so
 @include common-auth
 account required pam_nologin.so
 @include common-account
