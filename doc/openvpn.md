@@ -18,11 +18,6 @@ Source: [contrib/openvpn/server.conf](../contrib/openvpn/server.conf)
 
 ```txt
 auth required pam_aad.so
-@include common-auth
-account required pam_nologin.so
-@include common-account
-@include common-session
-@include common-password
 ```
 
 -Or-
