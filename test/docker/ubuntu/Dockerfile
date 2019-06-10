@@ -1,4 +1,4 @@
-FROM cyberninjas/pam_aad:latest
+FROM cyberninjas/pam_aad:ubuntu
 
 RUN apt update && apt install -y \
         gdb \

@@ -3,19 +3,8 @@ sudo: required
 services:
 - docker
 script:
-- docker build . -t cyberninjas/pam_aad
-- docker build . -t cyberninjas/pam_aad:ami -f Dockerfile.ami
-- docker build . -t cyberninjas/pam_aad:ami-2018.03 -f Dockerfile.ami-2018.03
-- docker build . -t cyberninjas/pam_aad:ubuntu-18.04 -f Dockerfile.ubuntu-18.04
-- docker build test -t cyberninjas/pam_aad:testing
-- docker build test -t cyberninjas/pam_aad:testing-ami -f test/Dockerfile.ami
-- docker build test -t cyberninjas/pam_aad:testing-ami-2018.03 -f test/Dockerfile.ami-2018.03
-- docker build test -t cyberninjas/pam_aad:testing-ubuntu-18.04 -f test/Dockerfile.ubuntu-18.04
-- docker run cyberninjas/pam_aad:testing
-- docker run cyberninjas/pam_aad:testing-ami
-- docker run cyberninjas/pam_aad:testing-ami-2018.03
-- docker run cyberninjas/pam_aad:testing-ubuntu-18.04
-- docker run -v $(pwd):/usr/src/pam_aad cyberninjas/pam_aad /bin/sh -c "cp /usr/src/*.deb /usr/src/pam_aad"
+- /bin/sh ./scripts/docker.sh
+- docker run -v $(pwd):/usr/src/pam_aad cyberninjas/pam_aad:debian /bin/sh -c "cp /usr/src/*.deb /usr/src/pam_aad"
 deploy:
   provider: bintray
   file: .bintray.json

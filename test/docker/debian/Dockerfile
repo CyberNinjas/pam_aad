@@ -1,4 +1,4 @@
-FROM cyberninjas/pam_aad:ubuntu-18.04
+FROM cyberninjas/pam_aad:debian
 
 RUN apt update && apt install -y \
         gdb \
