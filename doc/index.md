@@ -32,6 +32,26 @@ sudo make install
 
 ## Configuration
 
+Create the file ```/etc/pam_aad.conf``` and fill it with:
+
+```mustache
+{ 
+  "client": {
+    "id": "{{client_id}}"
+  },
+  "domain": "{{domain}}",
+  "group": {
+    "id": "{{group_id}}"
+  },
+  "smtp_server": "{{smtp_server}}",
+  "tenant": {
+    "name": "{{organization}}.onmicrosoft.com",
+    "address": "{{organization_email_address}}"
+  },
+  "debug": true # to optionally enable debugging mode
+}
+```
+
 1) Azure:
 
 - Login to the [Microsoft Azure Portal](portal.azure.com).
