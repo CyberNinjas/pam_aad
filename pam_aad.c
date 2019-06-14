@@ -25,6 +25,12 @@
 #define USER_PROMPT "An email with a one-time passcode was sent to your email." \
 	            "\nEnter the code at https://aka.ms/devicelogin, then press enter.\n"
 
+#ifndef _AAD_EXPORT
+#define STATIC static
+#else
+#define STATIC
+#endif
+
 struct message {
     size_t lines_read;
     char *data[];
@@ -39,7 +45,7 @@ struct ret_data {
     const char *u_code, *d_code, *auth_bearer;
 };
 
-static size_t read_callback(void *ptr, size_t size, size_t nmemb,
+STATIC size_t read_callback(void *ptr, size_t size, size_t nmemb,
                             void *userp)
 {
     struct message *msg = (struct message *) userp;
@@ -60,7 +66,7 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb,
     return 0;
 }
 
-static size_t response_callback(void *contents, size_t size, size_t nmemb,
+STATIC size_t response_callback(void *contents, size_t size, size_t nmemb,
                                 void *userp)
 {
     size_t realsize = size * nmemb;
@@ -80,7 +86,7 @@ static size_t response_callback(void *contents, size_t size, size_t nmemb,
     return realsize;
 }
 
-static char *get_date(void)
+STATIC char *get_date(void)
 {
     char *date;
     int len = 56;
@@ -95,10 +101,10 @@ static char *get_date(void)
     return date;
 }
 
-static char *get_message_id(void)
+STATIC char *get_message_id(void)
 {
     char domainname[64], hostname[64], msg_id[37], *message_id;
-    int len = 192;
+    int len = 192, ret;
     size_t i;
     uuid_t uuid;
 
@@ -119,19 +125,26 @@ static char *get_message_id(void)
         }
     }
 
-    getdomainname(domainname, sizeof(domainname));
-    gethostname(hostname, sizeof(hostname));
+    /* FIXME: Check for errors */
+    ret = getdomainname(domainname, sizeof(domainname));
+
+    /* FIXME: Check for errors */
+    ret = gethostname(hostname, sizeof(hostname));
+
+    (void) ret;
+
     snprintf(message_id, len, "Message-ID: <%s@%s.%s>\r\n", msg_id,
              hostname, domainname);
+
     return message_id;
 }
 
-static json_t *curl(const char *endpoint, const char *post_body,
-                    struct curl_slist *headers, bool debug)
+STATIC json_t *curl(const char *endpoint, const char *post_body,
+                    struct curl_slist * headers, bool debug)
 {
     CURL *curl;
     CURLcode res;
-    json_t *data;
+    json_t *data = NULL;
     json_error_t error;
 
     struct response resp;
@@ -171,10 +184,10 @@ static json_t *curl(const char *endpoint, const char *post_body,
     curl_easy_cleanup(curl);
     free(resp.data);
 
-    return (data) ? data : NULL;
+    return data;
 }
 
-static void auth_bearer_request(struct ret_data *data,
+STATIC void auth_bearer_request(struct ret_data *data,
                                 const char *client_id, const char *tenant,
                                 const char *code, json_t * json_data,
                                 bool debug)
@@ -193,7 +206,7 @@ static void auth_bearer_request(struct ret_data *data,
 
     for (;;) {
         nanosleep((const struct timespec[]) { {
-                                               TTW, 0 }
+                  TTW, 0}
                   }, NULL);
         json_data = curl(endpoint, post_body, NULL, debug);
 
@@ -217,7 +230,7 @@ static void auth_bearer_request(struct ret_data *data,
     data->auth_bearer = auth_bearer;
 }
 
-static void oauth_request(struct ret_data *data, const char *client_id,
+STATIC void oauth_request(struct ret_data *data, const char *client_id,
                           const char *tenant, json_t * json_data,
                           bool debug)
 {
@@ -254,13 +267,13 @@ static void oauth_request(struct ret_data *data, const char *client_id,
     sdsfree(post_body);
 }
 
-static int verify_user(jwt_t * jwt, const char *username)
+STATIC int verify_user(jwt_t * jwt, const char *username)
 {
     const char *upn = jwt_get_grant(jwt, "upn");
     return (strcmp(upn, username) == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-static int verify_group(const char *auth_token, const char *group_id,
+STATIC int verify_group(const char *auth_token, const char *group_id,
                         bool debug)
 {
     json_t *resp;
@@ -300,9 +313,7 @@ static int verify_group(const char *auth_token, const char *group_id,
     return ret;
 }
 
-static int notify_user(pam_handle_t * pamh, const char *to_addr,
-                       const char *from_addr, const char *message,
-                       const char *smtp_server, bool debug)
+STATIC int notify_user(const char *to_addr, const char *from_addr, const char *message, const char *smtp_server, bool debug)
 {
     CURL *curl;
     CURLcode res = CURLE_OK;
@@ -361,8 +372,6 @@ static int notify_user(pam_handle_t * pamh, const char *to_addr,
 
         curl_slist_free_all(recipients);
         curl_easy_cleanup(curl);
-
-        (void) pam_prompt(pamh, PAM_PROMPT_ECHO_OFF, NULL, USER_PROMPT);
     }
 
     free(msg->data[0]);
@@ -370,18 +379,17 @@ static int notify_user(pam_handle_t * pamh, const char *to_addr,
     return (int) res;
 }
 
-PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
-                                   int argc, const char **argv)
+STATIC int azure_authenticator(const char *user)
 {
     jwt_t *jwt;
     bool debug = DEBUG;
-    const char *user, *client_id, *group_id, *tenant,
+    const char *client_id, *group_id, *tenant,
         *domain, *u_code, *d_code, *ab_token, *tenant_addr, *smtp_server;
 
     struct ret_data data;
-    json_t *json_data, *config;
+    json_t *json_data = NULL, *config = NULL;
     json_error_t error;
-    int ret = PAM_AUTH_ERR;
+    int ret = EXIT_FAILURE;
 
     config = json_load_file(CONFIG_FILE, 0, &error);
     if (!config) {
@@ -447,11 +455,6 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
         return ret;
     }
 
-    if (pam_get_user(pamh, &user, NULL) != PAM_SUCCESS) {
-        fprintf(stderr, "pam_get_user(): failed to get a username\n");
-        return ret;
-    }
-
     sds user_addr = sdsnew(user);
     user_addr = sdscat(user_addr, "@");
     user_addr = sdscat(user_addr, domain);
@@ -465,7 +468,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 
     sds prompt = sdsnew(CODE_PROMPT);
     prompt = sdscat(prompt, u_code);
-    notify_user(pamh, user_addr, tenant_addr, prompt, smtp_server, debug);
+    notify_user(user_addr, tenant_addr, prompt, smtp_server, debug);
 
     auth_bearer_request(&data, client_id, tenant, d_code, json_data,
                         debug);
@@ -477,7 +480,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 
     if (verify_user(jwt, user_addr) == 0
         && verify_group(ab_token, group_id, debug) == 0) {
-        ret = PAM_SUCCESS;
+        ret = EXIT_SUCCESS;
     }
 
     json_decref(json_data);
@@ -487,6 +490,23 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
     return ret;
 }
 
+
+PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
+                                   int argc, const char **argv)
+{
+    const char *user;
+    int ret = PAM_AUTH_ERR;
+
+    if (pam_get_user(pamh, &user, NULL) != PAM_SUCCESS) {
+        fprintf(stderr, "pam_get_user(): failed to get a username\n");
+        return ret;
+    }
+
+    if (azure_authenticator(user) == 0)
+        return PAM_SUCCESS;
+
+    return ret;
+}
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t * pamh, int flags,
                               int argc, const char **argv)
