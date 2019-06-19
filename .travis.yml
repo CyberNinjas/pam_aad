@@ -7,8 +7,11 @@ script:
 - docker run -v $(pwd):/usr/src/pam_aad cyberninjas/pam_aad:debian /bin/sh -c "cp /usr/src/*.deb /usr/src/pam_aad"
 deploy:
   provider: bintray
-  file: .bintray.json
+  file: bintray.json
   user: jnchi
   key:
     secure: FBvhZ56Cx593d0sTMF/D37RKN8b8IflfFRqZP7n5IHO023Kp/z2YN7C9dkCjdLcspKkIvnuBMb6fr3IjZR8WOBPvhpxxDrw03ezLFXYdIBHeu17U2UtAisUo14MHT22EJslat6OQN/QL4pkwgjv3XOJNAdixaD80q7TSpwbiVws8EhVUOtCLoAGr/5MebLkvF+XYoWHn5FSMfmXHicPPfk+zUDnTRpdCgaIIeTBCgOYKc3d3jKRUnZZkSyGEkGKer4EBW7HuZsIcp8MbJty/dsCXPU6Se264bbLXN1bTsaRI6MEkLbLJrswYIasSuHyAavOclRLDQeUkTf6bf7qr58D+yseewpTEDRhNWyH2sW9/ptLZ17lAPP5He6tdwZhXdsDxr9QhXNoyZ312hizg1WXF/1gVEuR7ruqjh1cEN0LpFeWTrlj7mwMR9+uuKLAW8CnxUJNFcJi2sNSfx2CepXnmuoJIhk75gC3WhXqhF+ctnxYCwYihIEyrubioPwZsHxbqi8WCSEiiHJ6s+3v93oJdSHmSrPu/K/vp+0hKnPBqEgAacA1VbiiSeEJDNRUVzuSDEaPM2XiSI8D/IMwWodV7rw0VGLt1uDD1tV2kE3JOBLyDO+A3eHZd3eZX2TXy+bzpV7KykwD4tw/1Gpg0CBXvgDEJvnkWPJbEvLXtMKM=
   skip_cleanup: true
+  on:
+    tags: true
+

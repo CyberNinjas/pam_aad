@@ -1,4 +1,6 @@
 FROM ubuntu:18.04
+ARG VERSION
+ARG DEBVER
 
 RUN apt update && apt install -y \
         software-properties-common && \
@@ -25,7 +27,6 @@ RUN apt update && apt install -y \
 
 WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
-ENV PAMAADVERSION="0.0.3" PAMAADDEBVERSION="0.0.3-1"
-RUN tar cvzf "../pam-aad_${PAMAADVERSION}.orig.tar.gz" --exclude='.git*' . && \
+RUN tar cvzf "../pam-aad_${VERSION}.orig.tar.gz" --exclude='.git*' . && \
     debuild -us -uc -d -i'(.*)' && \
-    dpkg -i "../libpam-aad_${PAMAADDEBVERSION}_amd64.deb"
+    dpkg -i "../libpam-aad_${VERSION}-${DEBVER}_amd64.deb"

@@ -284,3 +284,4 @@ debian/.*
 debian/files
 debian/libpam-aad*
 *.deb
+bintray.json
