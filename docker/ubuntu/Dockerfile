@@ -25,7 +25,7 @@ RUN apt update && apt install -y \
 
 WORKDIR /usr/src/pam_aad
 COPY . /usr/src/pam_aad
-ENV PAMAADVERSION="0.0.2" PAMAADDEBVERSION="0.0.2-1"
+ENV PAMAADVERSION="0.0.3" PAMAADDEBVERSION="0.0.3-1"
 RUN tar cvzf "../pam-aad_${PAMAADVERSION}.orig.tar.gz" --exclude='.git*' . && \
     debuild -us -uc -d -i'(.*)' && \
     dpkg -i "../libpam-aad_${PAMAADDEBVERSION}_amd64.deb"

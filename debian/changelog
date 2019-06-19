@@ -1,3 +1,9 @@
+pam-aad (0.0.3-1) UNRELEASED; urgency=medium
+
+  * Enable external linking with -D_AAD_EXPORT
+
+ -- Lucas Ramage <lramage@cyberninjas.com>  Wed, 19 Jun 2019 15:23:42 +0000
+
 pam-aad (0.0.2-1) UNRELEASED; urgency=medium
 
   * New release.
