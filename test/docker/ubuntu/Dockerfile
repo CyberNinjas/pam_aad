@@ -1,6 +1,7 @@
 FROM cyberninjas/pam_aad:ubuntu
 
-RUN apt update && apt install -y \
+RUN unset VERSION DEBVER && \
+    apt update && apt install -y \
         gdb \
         openssh-server \
         pamtester \
