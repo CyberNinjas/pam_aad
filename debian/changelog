@@ -1,3 +1,9 @@
+pam-aad (0.0.4-1) UNRELEASED; urgency=medium
+
+  * Add Sign-in URL to email notification
+
+ -- Lucas Ramage <lramage@cyberninjas.com>  Thu, 15 Aug 2019 14:40:03 +0000
+
 pam-aad (0.0.3-1) UNRELEASED; urgency=medium
 
   * Enable external linking with -D_AAD_EXPORT
