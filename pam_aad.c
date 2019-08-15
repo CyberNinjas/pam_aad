@@ -22,7 +22,7 @@
 #define SUBJECT "Your one-time passcode for signing in via Azure Active Directory"
 #define TTW 5                   /* time to wait in seconds */
 #define USER_AGENT "azure_authenticator_pam/1.0"
-#define USER_PROMPT "\nEnter the code at https://aka.ms/devicelogin."
+#define USER_PROMPT "\n\nEnter the code at https://aka.ms/devicelogin."
 
 #ifndef _AAD_EXPORT
 #define STATIC static
