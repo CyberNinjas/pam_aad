@@ -42,7 +42,7 @@ Create the file ```/etc/pam_aad.conf``` and fill it with:
 }
 ```
 
-## Current behavior
+## Current Behavior
 
 [![asciicast](https://asciinema.org/a/250072.svg)](https://asciinema.org/a/250072)
 
