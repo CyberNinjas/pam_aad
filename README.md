@@ -46,6 +46,11 @@ Create the file ```/etc/pam_aad.conf``` and fill it with:
 
 [![asciicast](https://asciinema.org/a/250072.svg)](https://asciinema.org/a/250072)
 
+## See also
+
+- https://github.com/google/google-authenticator-libpam
+- https://github.com/quarxConnect/pam_oauth2
+
 [gpl-badge]: https://img.shields.io/badge/license-GPL-green.svg
 [gpl-license]: COPYING
 [travis-badge]: https://travis-ci.org/CyberNinjas/pam_aad.svg?branch=c-dev
