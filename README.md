@@ -4,7 +4,7 @@ Azure Active Directory PAM Module
 
 _This PAM module aims to provide Azure Active Directory authentication for Linux._
 
-## Installation
+##  Installation
 
 ```
 ./bootstrap.sh
