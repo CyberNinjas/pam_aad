@@ -22,7 +22,7 @@
 #define SUBJECT "Your one-time passcode for signing in via Azure Active Directory"
 #define TTW 5                   /* time to wait in seconds */
 #define USER_AGENT "azure_authenticator_pam/1.0"
-#define USER_PROMPT "\n\nEnter the code at https://aka.ms/devicelogin."
+#define USER_PROMPT "Enter the code at https://aka.ms/devicelogin."
 
 #ifndef _AAD_EXPORT
 #define STATIC static
@@ -465,10 +465,13 @@ STATIC int azure_authenticator(const char *user)
     u_code = data.u_code;
     d_code = data.d_code;
 
-    sds prompt = sdsnew(CODE_PROMPT);
-    prompt = sdscat(prompt, u_code);
-    prompt = sdscat(prompt, USER_PROMPT);
-    notify_user(user_addr, tenant_addr, prompt, smtp_server, debug);
+    //sds prompt = sdsnew(CODE_PROMPT);
+    //prompt = sdscat(prompt, u_code);
+    //prompt = sdscat(prompt, USER_PROMPT);
+    //notify_user(user_addr, tenant_addr, prompt, smtp_server, debug);
+
+    // Display User code
+    printf("%s %s\n%s\n\n", CODE_PROMPT, u_code, USER_PROMPT)
 
     auth_bearer_request(&data, client_id, tenant, d_code, json_data,
                         debug);
