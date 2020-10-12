@@ -22,7 +22,8 @@
 #define SUBJECT "Your one-time passcode for signing in via Azure Active Directory"
 #define TTW 5                   /* time to wait in seconds */
 #define USER_AGENT "azure_authenticator_pam/1.0"
-#define USER_PROMPT "\n\nEnter the code at https://aka.ms/devicelogin."
+#define USER_PROMPT "Enter the code at https://aka.ms/devicelogin."
+#define USER_PROMPT_ENTER "Enter the code at https://aka.ms/devicelogin, then press enter."
 
 #ifndef _AAD_EXPORT
 #define STATIC static
@@ -378,9 +379,10 @@ STATIC int notify_user(const char *to_addr, const char *from_addr, const char *m
     return (int) res;
 }
 
-STATIC int azure_authenticator(const char *user)
+STATIC int azure_authenticator(pam_handle_t * pamh, const char *user)
 {
     jwt_t *jwt;
+    bool enable_email = false;
     bool debug = DEBUG;
     const char *client_id, *group_id, *tenant,
         *domain, *u_code, *d_code, *ab_token, *tenant_addr, *smtp_server;
@@ -453,6 +455,10 @@ STATIC int azure_authenticator(const char *user)
         fprintf(stderr, "error with Domain in JSON\n");
         return ret;
     }
+    if (json_object_get(config, "email"))
+        if(strcmp(json_string_value(json_object_get(config, "email")),"true") == 0)
+            enable_email = true;
+
 
     sds user_addr = sdsnew(user);
     user_addr = sdscat(user_addr, "@");
@@ -467,8 +473,17 @@ STATIC int azure_authenticator(const char *user)
 
     sds prompt = sdsnew(CODE_PROMPT);
     prompt = sdscat(prompt, u_code);
-    prompt = sdscat(prompt, USER_PROMPT);
-    notify_user(user_addr, tenant_addr, prompt, smtp_server, debug);
+    prompt = sdscat(prompt, "\n");
+
+    if(enable_email){
+        prompt = sdscat(prompt, USER_PROMPT);
+        prompt = sdscat(prompt, "\n");
+        notify_user(user_addr, tenant_addr, prompt, smtp_server, debug);
+    } else {
+        prompt = sdscat(prompt, USER_PROMPT_ENTER);
+        prompt = sdscat(prompt, "\n");
+        (void) pam_prompt(pamh, PAM_PROMPT_ECHO_OFF, NULL, prompt);
+    }
 
     auth_bearer_request(&data, client_id, tenant, d_code, json_data,
                         debug);
@@ -502,7 +517,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
         return ret;
     }
 
-    if (azure_authenticator(user) == 0)
+    if (azure_authenticator(pamh, user) == 0)
         return PAM_SUCCESS;
 
     return ret;
