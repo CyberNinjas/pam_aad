@@ -479,7 +479,7 @@ STATIC int azure_authenticator(const char *user)
     jwt_decode(&jwt, ab_token, NULL, 0);
 
     if (verify_user(jwt, user_addr) == 0
-        && verify_group(ab_token, group_id, debug) == 0) {
+        && (strcmp(group_id,"")==0 || verify_group(ab_token, group_id, debug) == 0)) {
         ret = EXIT_SUCCESS;
     }
 
